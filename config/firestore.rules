@@ -1,0 +1,150 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions for Role-Based Access Control (RBAC)
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function getUserRole() {
+      return getUserData().get('role', 'farmer');
+    }
+
+    function isFarmer() {
+      return isAuthenticated() && (getUserRole() == 'farmer' || getUserRole() == 'admin');
+    }
+
+    function isVeterinarian() {
+      return isAuthenticated() && (getUserRole() == 'veterinarian' || getUserRole() == 'admin');
+    }
+
+    function isGovernmentOfficer() {
+      return isAuthenticated() && (getUserRole() == 'government' || getUserRole() == 'admin');
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && getUserRole() == 'admin';
+    }
+
+    // 1. Users collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      // Only user can update their profile, but role escalation is prevented
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']) || isAdmin());
+      allow delete: if isAdmin();
+
+      // Nested subcollections
+      match /farms/{farmId} {
+        allow read: if isAuthenticated();
+        allow write: if isOwner(userId) || isAdmin();
+
+        match /batches/{batchId} {
+          allow read: if isAuthenticated();
+          allow write: if isOwner(userId) || isAdmin();
+
+          match /dailyRecords/{recordId} {
+            allow read: if isAuthenticated();
+            allow write: if isOwner(userId) || isAdmin();
+          }
+        }
+      }
+
+      match /audit_logs/{logId} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow create: if isAuthenticated();
+      }
+    }
+
+    // 2. Health Cases (Top-level collection for collaborative surveillance)
+    match /health_cases/{caseId} {
+      allow read: if isAuthenticated();
+      // Farmers can submit incidents for their own farms
+      allow create: if isAuthenticated();
+      // Updates: Farmers can update draft notes; Vets can add assessments & diagnoses; Govt can review
+      allow update: if isAuthenticated();
+      allow delete: if isAdmin();
+    }
+
+    // 3. Risk Assessments
+    match /risk_assessments/{assessmentId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // 3b. AI Health Assessments (Multimodal AI Clinical Intelligence - SIH26128 Phase 4)
+    match /ai_health_assessments/{assessmentId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // 4. Disease Alerts (SIH26128 Phase 5)
+    match /disease_alerts/{alertId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // 4b. Global Notifications (SIH26128 Phase 5)
+    match /notifications/{notifId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // 5. Veterinarian Priority Queue & Assignments (SIH26128 Phase 5)
+    match /vet_assignments/{assignmentId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // 6. Laboratory Diagnostics & PCR Tests
+    match /lab_tests/{testId} {
+      allow read: if isAuthenticated();
+      allow write: if isVeterinarian() || isGovernmentOfficer() || isAdmin();
+    }
+
+    // 7. Treatment Plans
+    match /treatment_plans/{planId} {
+      allow read: if isAuthenticated();
+      allow write: if isVeterinarian() || isAdmin();
+    }
+
+    // 8. Outbreak Clusters (Regional GIS surveillance)
+    match /outbreak_clusters/{clusterId} {
+      allow read: if isAuthenticated();
+      allow write: if isGovernmentOfficer() || isAdmin();
+    }
+
+    // 9. Biosecurity Assessments
+    match /biosecurity_assessments/{bioId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // 10. Audit Logs
+    match /audit_logs/{logId} {
+      allow read: if isGovernmentOfficer() || isAdmin();
+      allow create: if isAuthenticated();
+      allow update, delete: if false; // Immutable audit trail
+    }
+
+    // Collection Group Queries for Farms, Batches, Daily Records
+    match /{path=**}/farms/{farmId} {
+      allow read: if isAuthenticated();
+    }
+    match /{path=**}/batches/{batchId} {
+      allow read: if isAuthenticated();
+    }
+    match /{path=**}/dailyRecords/{recordId} {
+      allow read: if isAuthenticated();
+    }
+  }
+}
