@@ -1,4 +1,3 @@
-import 'dart:io' if (dart.library.html) 'dart:html';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flock_sense/core/platform/file_download_service.dart';
