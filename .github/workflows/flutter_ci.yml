@@ -1,0 +1,34 @@
+name: Flutter Web & Mobile CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test_and_analyze:
+    name: Analyze & Run Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Format & Lint Check
+        run: flutter analyze
+
+      - name: Run Unit Tests
+        run: flutter test --coverage
+
+      - name: Build Web Application
+        run: flutter build web --release
