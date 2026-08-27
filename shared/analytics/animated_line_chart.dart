@@ -126,7 +126,9 @@ class _AnimatedLineChartState extends State<AnimatedLineChart>
     final safeMaxY = widget.maxY ?? (calculatedMaxY * 1.25);
     final safeMinY = widget.minY ?? (calculatedMinY < 0 ? calculatedMinY * 1.1 : 0.0);
 
-    final referencePoints = widget.series.first.points;
+    final referencePoints = widget.series
+        .firstWhere((s) => s.points.isNotEmpty, orElse: () => widget.series.first)
+        .points;
     final bottomInterval = (referencePoints.length / 5).clamp(1.0, 10.0);
 
     return AnimatedBuilder(
@@ -227,8 +229,8 @@ class _AnimatedLineChartState extends State<AnimatedLineChart>
                 }
               },
             ),
-            lineBarsData: widget.series.map((s) {
-              final visibleCount = (s.points.length * progress).clamp(0, s.points.length).toInt();
+            lineBarsData: widget.series.where((s) => s.points.isNotEmpty).map((s) {
+              final visibleCount = (s.points.length * progress).clamp(1, s.points.length).toInt();
               final visiblePoints = s.points.take(visibleCount).toList();
 
               return LineChartBarData(
