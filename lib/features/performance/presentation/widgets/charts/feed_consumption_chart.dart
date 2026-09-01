@@ -3,31 +3,26 @@ import 'package:flutter/material.dart';
 import 'package:flock_sense/core/theme/app_colors.dart';
 import 'package:flock_sense/features/performance/domain/growth_analytics_model.dart';
 
-class WaterConsumptionChart extends StatelessWidget {
-  const WaterConsumptionChart({super.key, required this.points});
+class FeedConsumptionChart extends StatelessWidget {
+  const FeedConsumptionChart({super.key, required this.bars});
 
-  final List<ChartPointData> points;
+  final List<ChartPointData> bars;
 
   @override
   Widget build(BuildContext context) {
-    if (points.isEmpty) {
-      return const Center(child: Text('No water records recorded', style: TextStyle(color: AppColors.textSecondary)));
+    if (bars.isEmpty) {
+      return const Center(child: Text('No feed records recorded', style: TextStyle(color: AppColors.textSecondary)));
     }
 
-    final spots = points
-        .asMap()
-        .entries
-        .map((e) => FlSpot(e.key.toDouble(), e.value.value))
-        .toList();
-
-    final computedMax = points.fold<double>(10.0, (max, p) => p.value > max ? p.value : max) * 1.15;
+    final computedMax = bars.fold<double>(10.0, (max, p) => p.value > max ? p.value : max) * 1.15;
     final safeMaxY = computedMax > 1.0 ? computedMax : 10.0;
-    final bottomInterval = (points.length / 5).clamp(1.0, 10.0);
+    final bottomInterval = (bars.length / 5).clamp(1.0, 10.0);
 
     return SizedBox(
       height: 200,
-      child: LineChart(
-      LineChartData(
+      child: BarChart(
+      BarChartData(
+        maxY: safeMaxY,
         gridData: FlGridData(
           show: true,
           drawVerticalLine: false,
@@ -43,8 +38,8 @@ class WaterConsumptionChart extends StatelessWidget {
               interval: bottomInterval,
               getTitlesWidget: (val, meta) {
                 final idx = val.toInt();
-                if (idx >= 0 && idx < points.length) {
-                  return Text(points[idx].label, style: const TextStyle(fontSize: 10, color: AppColors.textSecondary));
+                if (idx >= 0 && idx < bars.length) {
+                  return Text(bars[idx].label, style: const TextStyle(fontSize: 10, color: AppColors.textSecondary));
                 }
                 return const SizedBox.shrink();
               },
@@ -55,28 +50,25 @@ class WaterConsumptionChart extends StatelessWidget {
               showTitles: true,
               reservedSize: 32,
               getTitlesWidget: (val, meta) {
-                return Text('${val.toInt()}L', style: const TextStyle(fontSize: 10, color: AppColors.textSecondary));
+                return Text('${val.toInt()}kg', style: const TextStyle(fontSize: 10, color: AppColors.textSecondary));
               },
             ),
           ),
         ),
         borderData: FlBorderData(show: false),
-        minY: 0,
-        maxY: safeMaxY,
-        lineBarsData: [
-          LineChartBarData(
-            spots: spots,
-            isCurved: true,
-            color: const Color(0xFF0288D1),
-            barWidth: 3,
-            isStrokeCapRound: true,
-            dotData: const FlDotData(show: false),
-            belowBarData: BarAreaData(
-              show: true,
-              color: const Color(0xFF0288D1).withOpacity(0.12),
-            ),
-          ),
-        ],
+        barGroups: bars.asMap().entries.map((e) {
+          return BarChartGroupData(
+            x: e.key,
+            barRods: [
+              BarChartRodData(
+                toY: e.value.value,
+                color: const Color(0xFFE65100),
+                width: bars.length > 20 ? 6 : 12,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+              ),
+            ],
+          );
+        }).toList(),
       ),
     ),
     );
