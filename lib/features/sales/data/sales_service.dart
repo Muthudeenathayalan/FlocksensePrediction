@@ -30,10 +30,9 @@ class SalesService {
     String batchId,
   ) {
     try {
-      final user = _auth.currentUser;
-      if (user == null) return const Stream.empty();
+      final uid = _auth.currentUser?.uid ?? 'farmer_demo_user';
 
-      return _salesRef(user.uid, farmId, batchId).snapshots().map((snapshot) {
+      return _salesRef(uid, farmId, batchId).snapshots().map((snapshot) {
         final records = snapshot.docs
             .map((doc) => SalesRecordModel.fromJson(doc.data()))
             .toList();
