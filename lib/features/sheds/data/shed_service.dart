@@ -11,8 +11,21 @@ import 'package:flock_sense/core/models/sync_status.dart';
 class ShedService {
   ShedService._();
 
-  static final _db = FirebaseFirestore.instance;
-  static final _auth = FirebaseAuth.instance;
+  static FirebaseFirestore? get _db {
+    try {
+      return FirebaseFirestore.instance;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static FirebaseAuth? get _auth {
+    try {
+      return FirebaseAuth.instance;
+    } catch (_) {
+      return null;
+    }
+  }
 
   static final List<ShedModel> _inMemorySheds = [
     ShedModel(
@@ -44,18 +57,21 @@ class ShedService {
   ];
 
   static String _getEffectiveUserId() {
-    return _auth.currentUser?.uid ?? 'farmer_demo_user';
+    return _auth?.currentUser?.uid ?? 'farmer_demo_user';
   }
 
-  static CollectionReference<Map<String, dynamic>> _shedsRef(
+  static CollectionReference<Map<String, dynamic>>? _shedsRef(
     String uid,
     String farmId,
-  ) => _db
-      .collection('users')
-      .doc(uid)
-      .collection('farms')
-      .doc(farmId)
-      .collection('sheds');
+  ) {
+    if (_db == null) return null;
+    return _db!
+        .collection('users')
+        .doc(uid)
+        .collection('farms')
+        .doc(farmId)
+        .collection('sheds');
+  }
 
   // ── STREAMS ───────────────────────────────────────────────────────────────
 
@@ -65,16 +81,15 @@ class ShedService {
 
     controller = StreamController<List<ShedModel>>(
       onListen: () {
+        // 1. Emit in-memory match immediately
         final matching = _inMemorySheds.where((s) => s.farmId == farmId || farmId.isEmpty).toList();
         controller?.add(matching.isNotEmpty ? matching : List<ShedModel>.from(_inMemorySheds));
 
-        final user = _auth.currentUser;
+        // 2. Connect to Firestore if authenticated
+        final user = _auth?.currentUser;
         if (user != null && farmId.isNotEmpty) {
           try {
-            _shedsRef(user.uid, farmId)
-                .orderBy('createdAt', descending: false)
-                .snapshots()
-                .listen(
+            _shedsRef(user.uid, farmId)?.orderBy('createdAt', descending: false).snapshots().listen(
               (snap) {
                 if (snap.docs.isNotEmpty) {
                   final list = snap.docs.map((d) => ShedModel.fromJson(d.data())).toList();
@@ -118,9 +133,9 @@ class ShedService {
     int? capacity,
     String? notes,
   }) async {
-    if (_auth.currentUser == null) {
+    if (_auth?.currentUser == null) {
       try {
-        await _auth.signInAnonymously();
+        await _auth?.signInAnonymously();
       } catch (_) {}
     }
 
@@ -156,7 +171,7 @@ class ShedService {
 
     // Save to Firestore if available
     try {
-      final user = _auth.currentUser;
+      final user = _auth?.currentUser;
       if (user != null) {
         final shedData = {
           'id': shedId,
@@ -174,7 +189,7 @@ class ShedService {
           'createdAt': FieldValue.serverTimestamp(),
           'updatedAt': FieldValue.serverTimestamp(),
         };
-        await _shedsRef(user.uid, farmId).doc(shedId).set(shedData);
+        await _shedsRef(user.uid, farmId)?.doc(shedId).set(shedData);
       }
     } catch (e) {
       debugPrint('[ShedService.createShed] Firestore note: $e');
@@ -203,9 +218,9 @@ class ShedService {
     Map<String, dynamic> updates,
   ) async {
     try {
-      final user = _auth.currentUser;
+      final user = _auth?.currentUser;
       if (user != null) {
-        await _shedsRef(user.uid, farmId).doc(shedId).set({
+        await _shedsRef(user.uid, farmId)?.doc(shedId).set({
           ...updates,
           'updatedAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
@@ -233,9 +248,9 @@ class ShedService {
 
   static Future<void> deleteShed(String farmId, String shedId) async {
     try {
-      final user = _auth.currentUser;
+      final user = _auth?.currentUser;
       if (user != null) {
-        await _shedsRef(user.uid, farmId).doc(shedId).delete();
+        await _shedsRef(user.uid, farmId)?.doc(shedId).delete();
       }
     } catch (_) {}
 
