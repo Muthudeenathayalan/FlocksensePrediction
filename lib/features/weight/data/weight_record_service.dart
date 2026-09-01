@@ -81,10 +81,9 @@ class WeightRecordService {
     required String farmId,
     required String batchId,
   }) {
-    final user = _auth.currentUser;
-    if (user == null) return const Stream.empty();
+    final uid = _auth.currentUser?.uid ?? 'farmer_demo_user';
 
-    return _weightRecordsRef(user.uid, farmId, batchId)
+    return _weightRecordsRef(uid, farmId, batchId)
         .orderBy('recordDate', descending: true)
         .snapshots()
         .map(
