@@ -36,7 +36,7 @@ class _FeedRecordsScreenState extends State<FeedRecordsScreen> {
             farmId: widget.farmId,
             batchId: widget.batchId,
           )
-        : const Stream.empty();
+        : Stream.value(<FeedTransactionModel>[]);
     _summaryFuture = _loadSummary();
   }
 
