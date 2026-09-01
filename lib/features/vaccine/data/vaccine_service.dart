@@ -30,10 +30,9 @@ class VaccineService {
     String batchId,
   ) {
     try {
-      final user = _auth.currentUser;
-      if (user == null) return const Stream.empty();
+      final uid = _auth.currentUser?.uid ?? 'farmer_demo_user';
 
-      return _vaccineRef(user.uid, farmId, batchId).snapshots().map((snapshot) {
+      return _vaccineRef(uid, farmId, batchId).snapshots().map((snapshot) {
         final records = snapshot.docs
             .map((doc) => VaccineRecordModel.fromJson(doc.data()))
             .toList();
