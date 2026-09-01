@@ -8,8 +8,21 @@ import 'package:flock_sense/core/exceptions/app_exceptions.dart';
 class BatchService {
   BatchService._();
 
-  static final _db = FirebaseFirestore.instance;
-  static final _auth = FirebaseAuth.instance;
+  static FirebaseFirestore? get _db {
+    try {
+      return FirebaseFirestore.instance;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static FirebaseAuth? get _auth {
+    try {
+      return FirebaseAuth.instance;
+    } catch (_) {
+      return null;
+    }
+  }
 
   // In-memory fallback cache
   static final List<BatchModel> _inMemoryBatches = [
@@ -75,18 +88,21 @@ class BatchService {
       StreamController<List<BatchModel>>.broadcast();
 
   static String _getEffectiveUserId() {
-    return _auth.currentUser?.uid ?? 'farmer_demo_user';
+    return _auth?.currentUser?.uid ?? 'farmer_demo_user';
   }
 
-  static CollectionReference<Map<String, dynamic>> _batchesRef(
+  static CollectionReference<Map<String, dynamic>>? _batchesRef(
     String uid,
     String farmId,
-  ) => _db
-      .collection('users')
-      .doc(uid)
-      .collection('farms')
-      .doc(farmId)
-      .collection('batches');
+  ) {
+    if (_db == null) return null;
+    return _db!
+        .collection('users')
+        .doc(uid)
+        .collection('farms')
+        .doc(farmId)
+        .collection('batches');
+  }
 
   static Stream<List<BatchModel>> watchBatches(String farmId) {
     StreamController<List<BatchModel>>? controller;
@@ -99,11 +115,11 @@ class BatchService {
             .toList();
         controller?.add(matching.isNotEmpty ? matching : List<BatchModel>.from(_inMemoryBatches));
 
-        final user = _auth.currentUser;
+        final user = _auth?.currentUser;
         if (user != null && farmId.isNotEmpty) {
           try {
             _batchesRef(user.uid, farmId)
-                .orderBy('createdAt', descending: false)
+                ?.orderBy('createdAt', descending: false)
                 .snapshots()
                 .listen(
               (snap) {
@@ -111,14 +127,6 @@ class BatchService {
                   final list = snap.docs
                       .map((d) => BatchModel.fromJson({'id': d.id, 'farmId': farmId, ...d.data()}))
                       .toList();
-                  for (final b in list) {
-                    final idx = _inMemoryBatches.indexWhere((m) => m.id == b.id);
-                    if (idx >= 0) {
-                      _inMemoryBatches[idx] = b;
-                    } else {
-                      _inMemoryBatches.add(b);
-                    }
-                  }
                   controller?.add(list);
                 }
               },
@@ -143,11 +151,11 @@ class BatchService {
         );
     if (found != null) return found;
 
-    final user = _auth.currentUser;
+    final user = _auth?.currentUser;
     if (user != null) {
       try {
-        final snapshot = await _batchesRef(user.uid, farmId).doc(batchId).get();
-        if (snapshot.exists && snapshot.data() != null) {
+        final snapshot = await _batchesRef(user.uid, farmId)?.doc(batchId).get();
+        if (snapshot != null && snapshot.exists && snapshot.data() != null) {
           final batch = BatchModel.fromJson({'id': snapshot.id, 'farmId': farmId, ...snapshot.data()!});
           _inMemoryBatches.add(batch);
           return batch;
@@ -164,11 +172,11 @@ class BatchService {
         .toList();
     if (matching.isNotEmpty) return matching;
 
-    final user = _auth.currentUser;
+    final user = _auth?.currentUser;
     if (user != null) {
       try {
-        final snap = await _batchesRef(user.uid, farmId).get();
-        if (snap.docs.isNotEmpty) {
+        final snap = await _batchesRef(user.uid, farmId)?.get();
+        if (snap != null && snap.docs.isNotEmpty) {
           final list = snap.docs
               .map((d) => BatchModel.fromJson({'id': d.id, 'farmId': farmId, ...d.data()}))
               .toList();
@@ -215,9 +223,9 @@ class BatchService {
     String? notes,
   }) async {
     // Attempt anonymous sign in if not authenticated
-    if (_auth.currentUser == null) {
+    if (_auth?.currentUser == null) {
       try {
-        await _auth.signInAnonymously();
+        await _auth?.signInAnonymously();
       } catch (_) {}
     }
 
@@ -268,7 +276,7 @@ class BatchService {
 
     // Save to Firestore if available
     try {
-      final user = _auth.currentUser;
+      final user = _auth?.currentUser;
       if (user != null) {
         final batchData = {
           'id': batchId,
@@ -298,7 +306,7 @@ class BatchService {
           'createdAt': FieldValue.serverTimestamp(),
           'updatedAt': FieldValue.serverTimestamp(),
         };
-        await _batchesRef(user.uid, farmId).doc(batchId).set(batchData);
+        await _batchesRef(user.uid, farmId)?.doc(batchId).set(batchData);
       }
     } catch (e) {
       debugPrint('[BatchService.createBatch] Firestore write note: $e');
@@ -320,9 +328,9 @@ class BatchService {
     Map<String, dynamic> updates,
   ) async {
     try {
-      final user = _auth.currentUser;
+      final user = _auth?.currentUser;
       if (user != null) {
-        await _batchesRef(user.uid, farmId).doc(batchId).set({
+        await _batchesRef(user.uid, farmId)?.doc(batchId).set({
           ...updates,
           'updatedAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
@@ -343,9 +351,9 @@ class BatchService {
 
   static Future<void> deleteBatch(String farmId, String batchId) async {
     try {
-      final user = _auth.currentUser;
+      final user = _auth?.currentUser;
       if (user != null) {
-        await _batchesRef(user.uid, farmId).doc(batchId).delete();
+        await _batchesRef(user.uid, farmId)?.doc(batchId).delete();
       }
     } catch (_) {}
 
