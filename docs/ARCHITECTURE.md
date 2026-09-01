@@ -1,55 +1,48 @@
-# FlockSense Architecture & Engineering Design
+# FlockSense Architecture & Engineering Blueprint
 
-This document details the architectural principles, domain model boundaries, and telemetry evaluation pipelines of the **FlockSense** platform.
+## 1. Overview
+**FlockSense** is an enterprise-grade poultry farm telemetry, predictive risk intelligence, and veterinary clinical surveillance system built with Flutter, Riverpod, and Google Cloud Firebase.
 
----
-
-## 1. Architectural Principles
-
-FlockSense adopts **Domain-Driven Design (DDD)** combined with **Feature-First modularization** in Flutter:
-
-1. **Feature Separation**: Each module in `features/` encapsulates its own:
-   - `data/` (Repositories, REST/Firestore services, Data models)
-   - `domain/` (Entities, state providers, business validators)
-   - `presentation/` (Screens, reactive widgets, state consumers)
-
-2. **Unidirectional Data Flow**:
-   - UI triggers user intent / actions via Riverpod / StateNotifier providers.
-   - Domain providers invoke services to fetch/mutate data in Firestore / Local Cache.
-   - Cloud Functions react asynchronously to Firestore triggers for background intelligence.
-
-3. **Offline Resilience**:
-   - All daily log entries support local caching and opportunistic sync to prevent data loss in remote farm environments.
-
----
-
-## 2. Cloud AI & Risk Engine Pipeline
-
-```
-[ Farm Log Submitted ]
-        │
-        ▼
-[ Firestore 'daily_records' Trigger ]
-        │
-        ▼
-[ riskEngine.ts ] ──► Calculates FCR deviation, THI stress index, Mortality delta
-        │
-        ▼
-[ aiAssessmentEngine.ts ] ──► Evaluates symptom patterns & risk scores (Low/Med/High/Critical)
-        │
-        ▼
-[ escalationEngine.ts ] ──► If Critical, dispatches urgent notifications to Farm Vet & Manager
+```mermaid
+graph TD
+    Client[Flutter Multiplatform App / Web / Mobile] --> Providers[Riverpod 2.0 State Architecture]
+    Providers --> DataServices[Domain Services & Offline Fallback Layer]
+    DataServices --> Cache[(Hive Local KV & Memory)]
+    DataServices --> Firestore[(Firebase Cloud Firestore)]
+    DataServices --> AI[Gemini 1.5 Pro / Cloud Vertex AI]
+    DataServices --> Notification[Firebase Cloud Messaging & Local Alerts]
 ```
 
 ---
 
-## 3. Core Domain Equations
+## 2. Core Architectural Principles
 
-- **Feed Conversion Ratio (FCR)**:
-  $$\text{FCR} = \frac{\text{Total Cumulative Feed Consumed (kg)}}{\text{Total Live Weight (kg)}}$$
+### 2.1 Reactive Stream Repository Pattern
+All domain features expose reactive broadcast streams (`watchFarms`, `watchBatches`, `watchDailyRecords`) that guarantee:
+- **Synchronous First-Frame Delivery**: Never blocks on network roundtrips.
+- **Offline & Prototype Resilience**: Operates in zero-latency offline mode with in-memory persistence.
+- **Real-Time Synchronization**: Automatically merges Firestore snapshots when authenticated.
 
-- **European Production Efficiency Factor (EPEF)**:
-  $$\text{EPEF} = \frac{\text{Livability (\%)} \times \text{Average Live Weight (kg)}}{\text{Age (Days)} \times \text{FCR}} \times 100$$
+### 2.2 Domain Separation
+The codebase is structured under feature-first modularity:
+- `features/farms`: Farm facility registry, biosecurity status, and geographic boundary tagging.
+- `features/batches`: Flock placement, live bird decrement tracking, and harvest projection.
+- `features/daily_records`: High-speed multi-metric daily operational logging (feed, water, mortality, diesel generators).
+- `features/health`: Disease outbreak alerting, AI differential diagnosis, and veterinary clinical workflows.
+- `features/performance`: FCR (Feed Conversion Ratio), EPEF (European Production Efficiency Factor), and ADG analytics.
+- `features/inventory`: Dynamic stock ledger, automatic daily consumption deductions, and reorder alerts.
+- `features/reports`: Multi-format PDF, Excel, and CSV enterprise data export engine.
 
-- **Temperature Humidity Index (THI)**:
-  $$\text{THI} = 0.8 \times T + \left(\frac{\text{RH}}{100}\right) \times (T - 14.4) + 46.4$$
+---
+
+## 3. Telemetry Formulas & Analytics Engine
+
+### 3.1 Feed Conversion Ratio (FCR)
+$$\text{Day FCR} = \frac{\text{Total Feed Consumed (kg)}}{\text{Live Bird Count} \times \text{Average Daily Gain (kg)}}$$
+
+### 3.2 European Production Efficiency Factor (EPEF)
+$$\text{EPEF} = \frac{\text{Survival Rate (\%)} \times \text{Live Weight (kg)}}{\text{Age in Days} \times \text{Cumulative FCR}} \times 100$$
+
+### 3.3 Temperature-Humidity Index (THI)
+$$\text{THI} = 0.8 \times T + \left(\frac{H}{100}\right) \times (T - 14.4) + 46.4$$
+*Where $T$ is temperature in °C and $H$ is relative humidity percentage.*
