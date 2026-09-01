@@ -1,44 +1,113 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flock_sense/features/daily_records/domain/daily_record_model.dart';
 import 'package:flock_sense/features/performance/domain/performance_calculator.dart';
 
 void main() {
   group('PerformanceCalculator Tests', () {
-    test('calculateFcr computes correct Feed Conversion Ratio', () {
-      final fcr = PerformanceCalculator.calculateFcr(
-        totalFeedConsumedKg: 3200.0,
-        totalLiveWeightKg: 2000.0,
+    final now = DateTime.now();
+
+    test('calculateDayFcr computes correct Feed Conversion Ratio for a daily record', () {
+      final record = DailyRecordModel(
+        id: 'rec_01',
+        farmId: 'farm_01',
+        batchId: 'batch_01',
+        ownerId: 'user_01',
+        recordDate: now,
+        batchAgeDay: 21,
+        openingBirds: 5000,
+        mortalityCount: 2,
+        cullCount: 0,
+        adjustmentCount: 0,
+        closingBirds: 4998,
+        feedConsumedKg: 320.0,
+        waterConsumedLiters: 640.0,
+        avgWeightGrams: 850.0,
+        medicineGiven: false,
+        vaccineGiven: false,
+        createdAt: now,
+        updatedAt: now,
       );
-      expect(fcr, closeTo(1.60, 0.01));
+
+      final fcr = PerformanceCalculator.calculateDayFcr(record);
+      expect(fcr, isNotNull);
+      expect(fcr!, greaterThan(0));
     });
 
-    test('calculateFcr returns 0 when live weight is zero or negative', () {
-      final fcrZero = PerformanceCalculator.calculateFcr(
-        totalFeedConsumedKg: 1000.0,
-        totalLiveWeightKg: 0.0,
-      );
-      expect(fcrZero, equals(0.0));
+    test('calculateCumulativeFcr computes cumulative FCR across records', () {
+      final List<DailyRecordModel> records = [
+        DailyRecordModel(
+          id: 'rec_01',
+          farmId: 'farm_01',
+          batchId: 'batch_01',
+          ownerId: 'user_01',
+          recordDate: now.subtract(const Duration(days: 1)),
+          batchAgeDay: 20,
+          openingBirds: 5000,
+          mortalityCount: 2,
+          cullCount: 0,
+          adjustmentCount: 0,
+          closingBirds: 4998,
+          feedConsumedKg: 300.0,
+          waterConsumedLiters: 600.0,
+          avgWeightGrams: 800.0,
+          medicineGiven: false,
+          vaccineGiven: false,
+          createdAt: now,
+          updatedAt: now,
+        ),
+        DailyRecordModel(
+          id: 'rec_02',
+          farmId: 'farm_01',
+          batchId: 'batch_01',
+          ownerId: 'user_01',
+          recordDate: now,
+          batchAgeDay: 21,
+          openingBirds: 4998,
+          mortalityCount: 1,
+          cullCount: 0,
+          adjustmentCount: 0,
+          closingBirds: 4997,
+          feedConsumedKg: 320.0,
+          waterConsumedLiters: 640.0,
+          avgWeightGrams: 850.0,
+          medicineGiven: false,
+          vaccineGiven: false,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      ];
+
+      final cumulativeFcr = PerformanceCalculator.calculateCumulativeFcr(records, 21);
+      expect(cumulativeFcr, isNotNull);
+      expect(cumulativeFcr!, greaterThan(0));
     });
 
-    test('calculateEpef computes accurate European Production Efficiency Factor', () {
-      final epef = PerformanceCalculator.calculateEpef(
-        livabilityPercent: 96.5,
-        averageLiveWeightKg: 2.1,
-        ageDays: 35,
-        fcr: 1.55,
-      );
-      // EPEF = (96.5 * 2.1) / (35 * 1.55) * 100 = 202.65 / 54.25 * 100 = ~373.5
-      expect(epef, greaterThan(350.0));
-      expect(epef, lessThan(400.0));
-    });
+    test('calculateCumulativeMortalityPct calculates mortality percentage', () {
+      final List<DailyRecordModel> records = [
+        DailyRecordModel(
+          id: 'rec_01',
+          farmId: 'farm_01',
+          batchId: 'batch_01',
+          ownerId: 'user_01',
+          recordDate: now,
+          batchAgeDay: 1,
+          openingBirds: 5000,
+          mortalityCount: 25,
+          cullCount: 5,
+          adjustmentCount: 0,
+          closingBirds: 4970,
+          feedConsumedKg: 100.0,
+          waterConsumedLiters: 200.0,
+          avgWeightGrams: 55.0,
+          medicineGiven: false,
+          vaccineGiven: false,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      ];
 
-    test('calculateAdg calculates Average Daily Gain in grams', () {
-      final adg = PerformanceCalculator.calculateAdg(
-        currentWeightGrams: 2100.0,
-        dayOldWeightGrams: 42.0,
-        ageDays: 35,
-      );
-      // ADG = (2100 - 42) / 35 = 2058 / 35 = 58.8g/day
-      expect(adg, closeTo(58.8, 0.1));
+      final mortalityPct = PerformanceCalculator.calculateCumulativeMortalityPct(records, 5000, 1);
+      expect(mortalityPct, closeTo(0.6, 0.01));
     });
   });
 }

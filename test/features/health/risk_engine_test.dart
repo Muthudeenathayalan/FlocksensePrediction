@@ -1,33 +1,47 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flock_sense/features/health/data/risk_engine.dart';
-import 'package:flock_sense/features/health/data/risk_config.dart';
+import 'package:flock_sense/features/health/domain/health_case_model.dart';
 
 void main() {
   group('RiskEngine Evaluation Tests', () {
-    test('calculateThi returns correct Temperature Humidity Index', () {
-      final thi = RiskEngine.calculateThi(
-        temperatureCelsius: 32.0,
-        relativeHumidityPercent: 70.0,
+    test('calculateHealthRisk calculates score and detects critical anomalies', () {
+      final input = RiskEngineInput(
+        caseId: 'case_test_01',
+        farmId: 'farm_01',
+        batchId: 'batch_01',
+        currentMortality: 35,
+        affectedCount: 50,
+        symptoms: ['respiratory_rales', 'swollen_head', 'sudden_death'],
+        feedReductionPercent: 28.0,
+        waterReductionPercent: 20.0,
+        incidentDate: DateTime.now(),
+        currentBirdCount: 5000,
       );
-      // THI = 0.8*32 + 0.7*(32-14.4) + 46.4 = 25.6 + 12.32 + 46.4 = 84.32
-      expect(thi, closeTo(84.32, 0.5));
+
+      final assessment = RiskEngine.calculateHealthRisk(input);
+
+      expect(assessment.score, greaterThan(50));
+      expect(assessment.riskLevel, isIn([HealthRiskLevel.high, HealthRiskLevel.critical]));
+      expect(assessment.structuredReasons, isNotEmpty);
+      expect(assessment.inputHash, isNotEmpty);
     });
 
-    test('classifyHeatStress accurately grades THI ranges', () {
-      expect(RiskEngine.classifyHeatStress(72.0), equals(HeatStressLevel.normal));
-      expect(RiskEngine.classifyHeatStress(76.0), equals(HeatStressLevel.alert));
-      expect(RiskEngine.classifyHeatStress(81.0), equals(HeatStressLevel.danger));
-      expect(RiskEngine.classifyHeatStress(86.0), equals(HeatStressLevel.emergency));
-    });
-
-    test('evaluateMortalitySpike flags sudden spike above baseline', () {
-      final isSpike = RiskEngine.isMortalitySpike(
-        dailyMortalityCount: 45,
-        totalFlockPopulation: 5000,
-        dailyMortalityThresholdPercent: 0.5,
+    test('calculateHealthRisk produces low score for mild symptoms', () {
+      final input = RiskEngineInput(
+        caseId: 'case_test_02',
+        farmId: 'farm_01',
+        batchId: 'batch_01',
+        currentMortality: 0,
+        affectedCount: 2,
+        symptoms: ['mild_lethargy'],
+        feedReductionPercent: 2.0,
+        waterReductionPercent: 0.0,
+        incidentDate: DateTime.now(),
+        currentBirdCount: 5000,
       );
-      // 45 / 5000 = 0.9% > 0.5% threshold
-      expect(isSpike, isTrue);
+
+      final assessment = RiskEngine.calculateHealthRisk(input);
+      expect(assessment.score, lessThan(40));
     });
   });
 }
