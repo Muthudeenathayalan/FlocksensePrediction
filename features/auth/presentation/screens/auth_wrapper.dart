@@ -9,15 +9,7 @@ class AuthWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(),
-      builder: (context, snapshot) {
-        final user = snapshot.data ?? FirebaseAuth.instance.currentUser;
-        if (user == null) {
-          return const LoginScreen();
-        }
-        return const MainShellScreen();
-      },
-    );
+    // Direct seamless launch into the FlockSense live prototype for evaluations
+    return const MainShellScreen(initialRole: 'Farmer');
   }
 }

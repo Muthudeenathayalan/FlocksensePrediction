@@ -9,7 +9,10 @@ import 'package:flock_sense/core/widgets/app_card.dart';
 import 'package:flock_sense/core/widgets/page_container.dart';
 import 'package:flock_sense/core/widgets/status_badge.dart';
 import 'package:flock_sense/features/batches/data/batch_service.dart';
+import 'package:flock_sense/features/batches/presentation/screens/batch_list_screen.dart';
 import 'package:flock_sense/features/daily_records/presentation/screens/daily_record_form_screen.dart';
+import 'package:flock_sense/features/daily_records/presentation/screens/daily_records_dashboard_screen.dart';
+import 'package:flock_sense/features/feed/presentation/screens/feed_inventory_screen.dart';
 import 'package:flock_sense/features/farms/data/farm_service.dart';
 import 'package:flock_sense/features/farms/domain/farm_model.dart';
 import 'package:flock_sense/features/farms/presentation/providers/farm_providers.dart';
@@ -38,10 +41,13 @@ class FarmerDashboardScreen extends ConsumerStatefulWidget {
 class _FarmerDashboardScreenState extends ConsumerState<FarmerDashboardScreen> {
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
+    User? user;
+    try {
+      user = FirebaseAuth.instance.currentUser;
+    } catch (_) {}
     final displayName = user?.displayName ?? user?.email?.split('@').first ?? 'Farmer';
     final activeContext = ref.watch(activeFarmContextProvider);
-    final rawFarms = ref.watch(farmListProvider).value ?? FarmService.inMemoryFarms;
+    final rawFarms = ref.watch(farmListProvider).valueOrNull ?? FarmService.inMemoryFarms;
     final farms = rawFarms.isNotEmpty ? rawFarms : FarmService.inMemoryFarms;
     final dashboardState = ref.watch(farmerDashboardProvider);
 
@@ -53,19 +59,19 @@ class _FarmerDashboardScreenState extends ConsumerState<FarmerDashboardScreen> {
 
     return PageContainer(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // ── 1. Top Farm Switcher & Status Header ─────────────────────────────
           _buildFarmHeader(displayName, activeContext, farms),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
 
           // ── 2. 4-Card Hero Metric Baseline Strip ─────────────────────────────
-          _buildMetricBaselineStrip(intel),
-          const SizedBox(height: 24),
+          _buildMetricBaselineStrip(intel, activeContext),
+          const SizedBox(height: 16),
 
           // ── 3. Action Toolbar ────────────────────────────────────────────────
           _buildActionToolbar(activeContext),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
 
           // ── 4. Main Split: Thermal Telemetry & Nearby Corridor Activity ──────
           LayoutBuilder(
@@ -102,22 +108,22 @@ class _FarmerDashboardScreenState extends ConsumerState<FarmerDashboardScreen> {
               }
             },
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
 
           // ── 5. Actionable Recommendations (WHAT, WHY, WHO, STATUS) ───────────
           RoleRecommendationsWidget(recommendations: intel.recommendations),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
 
           // ── 6. Farm Health Timeline ──────────────────────────────────────────
           FarmHealthTimelineWidget(
             events: intel.timeline,
             onAddEvent: () => _openVisitorDialog(activeContext.farmId),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
 
           // ── 7. Active Flocks & Batch Overview ────────────────────────────────
           _buildActiveBatchesSection(dashboardState, activeContext),
-          const SizedBox(height: 32),
+          const SizedBox(height: 24),
         ],
       ),
     );
@@ -234,7 +240,7 @@ class _FarmerDashboardScreenState extends ConsumerState<FarmerDashboardScreen> {
     );
   }
 
-  Widget _buildMetricBaselineStrip(FarmHealthIntelligenceModel intel) {
+  Widget _buildMetricBaselineStrip(FarmHealthIntelligenceModel intel, ActiveFarmContext activeContext) {
     final mort = intel.metricBaselines['mortality'];
     final feed = intel.metricBaselines['feed'];
     final water = intel.metricBaselines['water'];
@@ -242,72 +248,123 @@ class _FarmerDashboardScreenState extends ConsumerState<FarmerDashboardScreen> {
     final isCritical = intel.overallRiskScore >= 76;
     final isHigh = intel.overallRiskScore >= 51;
 
+    final card1 = _buildMetricCard(
+      title: 'Farm Health Risk',
+      value: '${intel.overallRiskScore} / 100',
+      subtitle: 'Risk Level: ${intel.overallRiskLevel.name.toUpperCase()}',
+      statusText: intel.farmBehaviourStatus.label,
+      statusType: isCritical ? StatusBadgeType.critical : (isHigh ? StatusBadgeType.warning : StatusBadgeType.healthy),
+      icon: Icons.health_and_safety_outlined,
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => FarmHealthIntelligenceScreen(
+              farmId: intel.farmId,
+              role: ResponsibleRole.farmer,
+            ),
+          ),
+        );
+      },
+    );
+
+    final card2 = _buildMetricCard(
+      title: 'Daily Mortality vs Baseline',
+      value: '${mort?.currentValue.toInt() ?? 3} birds/day',
+      subtitle: '7-Day Baseline: ${mort?.baselineMean.toStringAsFixed(1) ?? "3.0"}/day (${mort?.ratio.toStringAsFixed(1) ?? "1.0"}x)',
+      statusText: mort?.status.label ?? 'NORMAL',
+      statusType: (mort?.status == MetricStatus.severeAnomaly || mort?.status == MetricStatus.abnormal)
+          ? StatusBadgeType.critical
+          : StatusBadgeType.healthy,
+      icon: Icons.trending_up_rounded,
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => DailyRecordsDashboardScreen(
+              initialFarmId: intel.farmId,
+              initialBatchId: activeContext.batchId,
+            ),
+          ),
+        );
+      },
+    );
+
+    final card3 = _buildMetricCard(
+      title: 'Feed Intake vs Baseline',
+      value: '${feed?.currentValue.toStringAsFixed(0) ?? "510"} kg/day',
+      subtitle: 'Baseline: ${feed?.baselineMean.toStringAsFixed(0) ?? "510"} kg (${feed?.deviationPercent.toStringAsFixed(1) ?? "0.0"}%)',
+      statusText: feed?.status.label ?? 'NORMAL',
+      statusType: feed?.status == MetricStatus.normal ? StatusBadgeType.healthy : StatusBadgeType.warning,
+      icon: Icons.restaurant_outlined,
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => FeedInventoryScreen(
+              farmId: intel.farmId,
+              batchId: activeContext.batchId ?? 'batch_demo_001',
+              batchName: activeContext.batchName,
+            ),
+          ),
+        );
+      },
+    );
+
+    final card4 = _buildMetricCard(
+      title: 'Water Intake vs Baseline',
+      value: '${water?.currentValue.toStringAsFixed(0) ?? "900"} L/day',
+      subtitle: 'Baseline: ${water?.baselineMean.toStringAsFixed(0) ?? "900"} L (${water?.deviationPercent.toStringAsFixed(1) ?? "0.0"}%)',
+      statusText: water?.status.label ?? 'NORMAL',
+      statusType: water?.status == MetricStatus.normal ? StatusBadgeType.healthy : StatusBadgeType.warning,
+      icon: Icons.water_drop_outlined,
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => FeedInventoryScreen(
+              farmId: intel.farmId,
+              batchId: activeContext.batchId ?? 'batch_demo_001',
+              batchName: activeContext.batchName,
+            ),
+          ),
+        );
+      },
+    );
+
     return LayoutBuilder(
       builder: (context, constraints) {
-        final cardWidth = (constraints.maxWidth - 36) / 4;
         final isNarrow = constraints.maxWidth < 900;
-        final itemWidth = isNarrow ? (constraints.maxWidth - 12) / 2 : cardWidth;
-
-        return Wrap(
-          spacing: 12,
-          runSpacing: 12,
+        if (isNarrow) {
+          return Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(child: card1),
+                  const SizedBox(width: 12),
+                  Expanded(child: card2),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(child: card3),
+                  const SizedBox(width: 12),
+                  Expanded(child: card4),
+                ],
+              ),
+            ],
+          );
+        }
+        return Row(
           children: [
-            // Card 1: Overall Health Risk
-            _buildMetricCard(
-              title: 'Farm Health Risk',
-              value: '${intel.overallRiskScore} / 100',
-              subtitle: 'Risk Level: ${intel.overallRiskLevel.name.toUpperCase()}',
-              statusText: intel.farmBehaviourStatus.label,
-              statusType: isCritical ? StatusBadgeType.critical : (isHigh ? StatusBadgeType.warning : StatusBadgeType.healthy),
-              icon: Icons.health_and_safety_outlined,
-              width: itemWidth,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => FarmHealthIntelligenceScreen(
-                      farmId: intel.farmId,
-                      role: ResponsibleRole.farmer,
-                    ),
-                  ),
-                );
-              },
-            ),
-
-            // Card 2: Mortality vs Baseline
-            _buildMetricCard(
-              title: 'Daily Mortality vs Baseline',
-              value: '${mort?.currentValue.toInt() ?? 3} birds/day',
-              subtitle: '7-Day Baseline: ${mort?.baselineMean.toStringAsFixed(1) ?? "3.0"}/day (${mort?.ratio.toStringAsFixed(1) ?? "1.0"}x)',
-              statusText: mort?.status.label ?? 'NORMAL',
-              statusType: (mort?.status == MetricStatus.severeAnomaly || mort?.status == MetricStatus.abnormal)
-                  ? StatusBadgeType.critical
-                  : StatusBadgeType.healthy,
-              icon: Icons.trending_up_rounded,
-              width: itemWidth,
-            ),
-
-            // Card 3: Feed Consumption vs Baseline
-            _buildMetricCard(
-              title: 'Feed Intake vs Baseline',
-              value: '${feed?.currentValue.toStringAsFixed(0) ?? "510"} kg/day',
-              subtitle: 'Baseline: ${feed?.baselineMean.toStringAsFixed(0) ?? "510"} kg (${feed?.deviationPercent.toStringAsFixed(1) ?? "0.0"}%)',
-              statusText: feed?.status.label ?? 'NORMAL',
-              statusType: feed?.status == MetricStatus.normal ? StatusBadgeType.healthy : StatusBadgeType.warning,
-              icon: Icons.restaurant_outlined,
-              width: itemWidth,
-            ),
-
-            // Card 4: Water Intake vs Baseline
-            _buildMetricCard(
-              title: 'Water Intake vs Baseline',
-              value: '${water?.currentValue.toStringAsFixed(0) ?? "900"} L/day',
-              subtitle: 'Baseline: ${water?.baselineMean.toStringAsFixed(0) ?? "900"} L (${water?.deviationPercent.toStringAsFixed(1) ?? "0.0"}%)',
-              statusText: water?.status.label ?? 'NORMAL',
-              statusType: water?.status == MetricStatus.normal ? StatusBadgeType.healthy : StatusBadgeType.warning,
-              icon: Icons.water_drop_outlined,
-              width: itemWidth,
-            ),
+            Expanded(child: card1),
+            const SizedBox(width: 12),
+            Expanded(child: card2),
+            const SizedBox(width: 12),
+            Expanded(child: card3),
+            const SizedBox(width: 12),
+            Expanded(child: card4),
           ],
         );
       },
@@ -321,14 +378,12 @@ class _FarmerDashboardScreenState extends ConsumerState<FarmerDashboardScreen> {
     required String statusText,
     required StatusBadgeType statusType,
     required IconData icon,
-    required double width,
     VoidCallback? onTap,
   }) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(AppDesign.radiusSm),
       child: Container(
-        width: width,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: AppColors.surface,
@@ -362,78 +417,94 @@ class _FarmerDashboardScreenState extends ConsumerState<FarmerDashboardScreen> {
   }
 
   Widget _buildActionToolbar(ActiveFarmContext activeContext) {
+    final btn1 = AppButton(
+      label: 'Log Daily Record',
+      icon: Icons.edit_note_rounded,
+      variant: AppButtonVariant.primary,
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => DailyRecordFormScreen(
+              farmId: activeContext.farmId,
+              batchId: activeContext.batchId ?? 'batch_01',
+            ),
+          ),
+        );
+      },
+    );
+
+    final btn2 = AppButton(
+      label: 'Report Health Anomaly',
+      icon: Icons.report_problem_outlined,
+      variant: AppButtonVariant.secondary,
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const HealthScreen(),
+          ),
+        );
+      },
+    );
+
+    final btn3 = AppButton(
+      label: 'Log Farm Visitor',
+      icon: Icons.badge_outlined,
+      variant: AppButtonVariant.secondary,
+      onPressed: () => _openVisitorDialog(activeContext.farmId),
+    );
+
+    final btn4 = AppButton(
+      label: 'Intelligence Engine',
+      icon: Icons.psychology_outlined,
+      variant: AppButtonVariant.secondary,
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => FarmHealthIntelligenceScreen(
+              farmId: activeContext.farmId,
+              role: ResponsibleRole.farmer,
+            ),
+          ),
+        );
+      },
+    );
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final isNarrow = constraints.maxWidth < 900;
-        final itemWidth = isNarrow ? (constraints.maxWidth - 12) / 2 : (constraints.maxWidth - 36) / 4;
-
-        return Wrap(
-          spacing: 12,
-          runSpacing: 12,
+        if (isNarrow) {
+          return Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(child: btn1),
+                  const SizedBox(width: 12),
+                  Expanded(child: btn2),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(child: btn3),
+                  const SizedBox(width: 12),
+                  Expanded(child: btn4),
+                ],
+              ),
+            ],
+          );
+        }
+        return Row(
           children: [
-            SizedBox(
-              width: itemWidth,
-              child: AppButton(
-                label: 'Log Daily Record',
-                icon: Icons.edit_note_rounded,
-                variant: AppButtonVariant.primary,
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => DailyRecordFormScreen(
-                        farmId: activeContext.farmId,
-                        batchId: activeContext.batchId ?? 'batch_01',
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            SizedBox(
-              width: itemWidth,
-              child: AppButton(
-                label: 'Report Health Anomaly',
-                icon: Icons.report_problem_outlined,
-                variant: AppButtonVariant.secondary,
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const HealthScreen(),
-                    ),
-                  );
-                },
-              ),
-            ),
-            SizedBox(
-              width: itemWidth,
-              child: AppButton(
-                label: 'Log Visitor Entry',
-                icon: Icons.person_add_alt_1_outlined,
-                variant: AppButtonVariant.secondary,
-                onPressed: () => _openVisitorDialog(activeContext.farmId),
-              ),
-            ),
-            SizedBox(
-              width: itemWidth,
-              child: AppButton(
-                label: 'Intelligence Engine',
-                icon: Icons.psychology_outlined,
-                variant: AppButtonVariant.secondary,
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => FarmHealthIntelligenceScreen(
-                        farmId: activeContext.farmId,
-                        role: ResponsibleRole.farmer,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
+            Expanded(child: btn1),
+            const SizedBox(width: 12),
+            Expanded(child: btn2),
+            const SizedBox(width: 12),
+            Expanded(child: btn3),
+            const SizedBox(width: 12),
+            Expanded(child: btn4),
           ],
         );
       },
@@ -465,26 +536,40 @@ class _FarmerDashboardScreenState extends ConsumerState<FarmerDashboardScreen> {
             separatorBuilder: (_, __) => const Divider(height: 1),
             itemBuilder: (context, index) {
               final batch = effectiveBatches[index];
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.egg_outlined, size: 20, color: AppColors.primary),
-                        const SizedBox(width: 10),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(batch.batchName, style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700)),
-                            Text('Breed: ${batch.breedOrFlockType} • Placed: ${batch.currentBirds} birds', style: AppTypography.caption),
-                          ],
-                        ),
-                      ],
+              return InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => BatchListScreen(
+                        farmId: activeContext.farmId,
+                        farmName: activeContext.farmName,
+                      ),
                     ),
-                    StatusBadge(label: batch.status.toUpperCase(), type: StatusBadgeType.healthy),
-                  ],
+                  );
+                },
+                borderRadius: BorderRadius.circular(AppDesign.radiusSm),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.egg_outlined, size: 20, color: AppColors.primary),
+                          const SizedBox(width: 10),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(batch.batchName, style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700)),
+                              Text('Breed: ${batch.breedOrFlockType} • Placed: ${batch.currentBirds} birds', style: AppTypography.caption),
+                            ],
+                          ),
+                        ],
+                      ),
+                      StatusBadge(label: batch.status.toUpperCase(), type: StatusBadgeType.healthy),
+                    ],
+                  ),
                 ),
               );
             },

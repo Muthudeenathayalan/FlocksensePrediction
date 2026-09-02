@@ -20,20 +20,11 @@ class PageContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    final horizontalPad = width >= 1440 ? 32.0 : 24.0;
-    final defaultPadding = EdgeInsets.symmetric(
-      horizontal: horizontalPad,
-      vertical: 24.0,
-    );
-
-    final content = Center(
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: maxWidth),
-        child: Padding(
-          padding: padding ?? defaultPadding,
-          child: child,
-        ),
+    final content = SizedBox(
+      width: double.infinity,
+      child: Padding(
+        padding: padding ?? const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+        child: child,
       ),
     );
 

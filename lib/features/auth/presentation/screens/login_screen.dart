@@ -118,7 +118,20 @@ class _LoginScreenState extends State<LoginScreen> {
           Expanded(
             flex: 5,
             child: Container(
-              color: AppColors.slate900,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFFF0FDF4),
+                    Color(0xFFF8FAFC),
+                    Color(0xFFF1F5F9),
+                  ],
+                ),
+                border: Border(
+                  right: BorderSide(color: AppColors.border, width: 1),
+                ),
+              ),
               padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 48),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -146,7 +159,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.w800,
-                          color: Colors.white,
+                          color: AppColors.slate900,
                           letterSpacing: -0.5,
                         ),
                       ),
@@ -163,11 +176,11 @@ class _LoginScreenState extends State<LoginScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.2),
+                            color: AppColors.primarySoft,
                             borderRadius:
                                 BorderRadius.circular(AppDesign.radiusFull),
                             border: Border.all(
-                              color: AppColors.primary.withOpacity(0.4),
+                              color: AppColors.healthyBorder,
                               width: 1,
                             ),
                           ),
@@ -176,7 +189,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.primaryLight,
+                              color: AppColors.primaryDark,
                               letterSpacing: 0.5,
                             ),
                           ),
@@ -186,8 +199,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           'AI-Powered Animal Health Intelligence & Early Warning Platform',
                           style: TextStyle(
                             fontSize: 32,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.slate900,
                             height: 1.25,
                             letterSpacing: -0.8,
                           ),
@@ -197,7 +210,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           'Real-time flock telemetry, early disease anomaly detection, and rapid coordination between poultry farmers, field veterinarians, and government health authorities.',
                           style: TextStyle(
                             fontSize: 15,
-                            color: AppColors.slate300,
+                            color: AppColors.slate600,
                             height: 1.5,
                           ),
                         ),
@@ -599,13 +612,14 @@ class _LoginScreenState extends State<LoginScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          width: 32,
-          height: 32,
+          width: 34,
+          height: 34,
           decoration: BoxDecoration(
-            color: AppColors.slate800,
+            color: AppColors.primarySoft,
             borderRadius: BorderRadius.circular(AppDesign.radiusSm),
+            border: Border.all(color: AppColors.healthyBorder.withValues(alpha: 0.8), width: 1),
           ),
-          child: Icon(icon, size: 16, color: AppColors.primaryLight),
+          child: Icon(icon, size: 17, color: AppColors.primary),
         ),
         const SizedBox(width: 14),
         Expanded(
@@ -616,8 +630,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 title,
                 style: const TextStyle(
                   fontSize: 13.5,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.slate900,
                 ),
               ),
               const SizedBox(height: 2),
@@ -625,7 +639,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 desc,
                 style: const TextStyle(
                   fontSize: 12,
-                  color: AppColors.slate400,
+                  color: AppColors.slate600,
                   height: 1.4,
                 ),
               ),
