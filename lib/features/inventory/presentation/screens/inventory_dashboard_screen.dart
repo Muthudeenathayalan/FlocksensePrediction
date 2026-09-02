@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flock_sense/core/theme/app_colors.dart';
+import 'package:flock_sense/features/inventory/data/inventory_service.dart';
 import 'package:flock_sense/features/inventory/domain/inventory_item_model.dart';
 import 'package:flock_sense/features/inventory/presentation/providers/inventory_providers.dart';
 import 'package:flock_sense/features/inventory/presentation/screens/inventory_item_detail_screen.dart';
@@ -156,19 +157,18 @@ class InventoryDashboardScreen extends ConsumerWidget {
         icon: const Icon(Icons.add),
         label: const Text('Add Item', style: TextStyle(fontWeight: FontWeight.bold)),
       ),
-      body: inventoryAsync.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: AppColors.primary),
-        ),
-        error: (error, stack) => _buildErrorState(context, ref, error),
-        data: (allRawItems) => Column(
-          children: [
-            // Top Summary KPIs Section
-            Container(
-              color: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-              child: InventorySummaryCards(stats: stats),
-            ),
+      body: Builder(
+        builder: (context) {
+          final rawItems = inventoryAsync.value ?? InventoryService.sampleInventoryItems;
+          final allRawItems = rawItems.isNotEmpty ? rawItems : InventoryService.sampleInventoryItems;
+          return Column(
+            children: [
+              // Top Summary KPIs Section
+              Container(
+                color: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                child: InventorySummaryCards(stats: stats),
+              ),
             const Divider(height: 1, color: AppColors.border),
 
             // Search Bar & Sort Row
@@ -312,10 +312,11 @@ class InventoryDashboardScreen extends ConsumerWidget {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
+        );
+      },
+    ),
+  );
+}
 
   Widget _categoryChip(
     WidgetRef ref,

@@ -84,6 +84,8 @@ class BatchService {
     ),
   ];
 
+  static List<BatchModel> get inMemoryBatches => List<BatchModel>.from(_inMemoryBatches);
+
   static final StreamController<List<BatchModel>> _batchesStreamController =
       StreamController<List<BatchModel>>.broadcast();
 

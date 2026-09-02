@@ -56,28 +56,20 @@ class _FarmListScreenState extends ConsumerState<FarmListScreen> {
   @override
   Widget build(BuildContext context) {
     final farmsAsync = ref.watch(farmListProvider);
+    final rawFarms = farmsAsync.value ?? FarmService.inMemoryFarms;
+    final farms = rawFarms.isNotEmpty ? rawFarms : FarmService.inMemoryFarms;
 
-    return farmsAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-      error: (_, __) => AppEmptyState(
-        icon: Icons.wifi_off_rounded,
-        title: 'Unable to load facilities',
-        message: 'Check your connection or verify database permissions.',
-        buttonLabel: 'Retry',
-        onButtonPressed: () => ref.invalidate(farmListProvider),
-      ),
-      data: (farms) {
-        var filteredFarms = farms.where((f) {
-          final matchesSearch = f.farmName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-              f.address.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-              (f.district?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false);
-          if (!matchesSearch) return false;
-          if (_selectedStatusFilter == 'Active') return f.status == 'active';
-          if (_selectedStatusFilter == 'Inactive') return f.status != 'active';
-          return true;
-        }).toList();
+    var filteredFarms = farms.where((f) {
+      final matchesSearch = f.farmName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          f.address.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          (f.district?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false);
+      if (!matchesSearch) return false;
+      if (_selectedStatusFilter == 'Active') return f.status == 'active';
+      if (_selectedStatusFilter == 'Inactive') return f.status != 'active';
+      return true;
+    }).toList();
 
-        return PageContainer(
+    return PageContainer(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -277,7 +269,5 @@ class _FarmListScreenState extends ConsumerState<FarmListScreen> {
             ],
           ),
         );
-      },
-    );
   }
 }

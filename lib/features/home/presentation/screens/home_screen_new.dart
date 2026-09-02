@@ -271,26 +271,26 @@ class _HomeScreenState extends State<HomeScreen> {
                           crossAxisSpacing: 10,
                           mainAxisSpacing: 12,
                           children: [
-                            AppDesign.actionButton(
+                            _ActionButton(
                               icon: Icons.add_business_rounded,
                               label: 'New Farm',
-                              gradient: AppDesign.actionGreen,
+                              color: AppColors.primary,
                               onTap: () => Navigator.pushNamed(
                                 context,
                                 AppRoutes.farmSetup,
                               ),
                             ),
-                            AppDesign.actionButton(
+                            _ActionButton(
                               icon: Icons.home_work_rounded,
                               label: 'My Farms',
-                              gradient: AppDesign.actionTeal,
+                              color: AppColors.info,
                               onTap: () =>
                                   Navigator.pushNamed(context, AppRoutes.farms),
                             ),
-                            AppDesign.actionButton(
+                            _ActionButton(
                               icon: Icons.calendar_today_rounded,
                               label: 'Records',
-                              gradient: AppDesign.actionGold,
+                              color: AppColors.warning,
                               onTap: () => Navigator.push(
                                 context,
                                 MaterialPageRoute(
@@ -298,10 +298,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ),
                             ),
-                            AppDesign.actionButton(
+                            _ActionButton(
                               icon: Icons.picture_as_pdf_rounded,
                               label: 'Reports',
-                              gradient: AppDesign.actionBlue,
+                              color: AppColors.primaryMedium,
                               onTap: () => Navigator.push(
                                 context,
                                 MaterialPageRoute(
@@ -600,6 +600,44 @@ class _GradientStatTile extends StatelessWidget {
             style: const TextStyle(fontSize: 13, color: Color(0xCCFFFFFF)),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _ActionButton({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppDesign.radiusSm),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(AppDesign.radiusSm),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: color, size: 24),
+            const SizedBox(height: 6),
+            Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color)),
+          ],
+        ),
       ),
     );
   }

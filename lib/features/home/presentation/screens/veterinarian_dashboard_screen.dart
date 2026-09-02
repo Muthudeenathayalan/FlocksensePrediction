@@ -2,26 +2,53 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flock_sense/core/theme/app_colors.dart';
-import 'package:flock_sense/core/theme/app_design.dart';
 import 'package:flock_sense/core/theme/app_typography.dart';
 import 'package:flock_sense/core/widgets/app_button.dart';
 import 'package:flock_sense/core/widgets/app_card.dart';
 import 'package:flock_sense/core/widgets/page_container.dart';
 import 'package:flock_sense/core/widgets/status_badge.dart';
 import 'package:flock_sense/core/widgets/web_page_header.dart';
-import 'package:flock_sense/features/health/data/lab_test_service.dart';
-import 'package:flock_sense/features/health/domain/lab_test_model.dart';
+import 'package:flock_sense/features/health/presentation/screens/farm_clinical_view_screen.dart';
 import 'package:flock_sense/features/health/presentation/screens/veterinarian_critical_queue_screen.dart';
-import 'package:flock_sense/features/health/presentation/screens/veterinarian_lab_results_screen.dart';
-import 'package:flock_sense/features/health/presentation/widgets/outbreak_cluster_alert_card.dart';
-import 'package:flock_sense/features/health/presentation/widgets/vet_priority_queue_card.dart';
 import 'package:flock_sense/features/home/presentation/providers/veterinarian_dashboard_provider.dart';
-import 'package:flock_sense/shared/analytics/animated_bar_chart.dart';
-import 'package:flock_sense/shared/analytics/animated_chart_container.dart';
 import 'package:flock_sense/shared/analytics/animated_kpi_card.dart';
-import 'package:flock_sense/shared/analytics/animated_line_chart.dart';
 
-/// Dedicated Veterinarian Clinical Dashboard with Animated Triage Analytics (SIH26128)
+/// Managed Farm Record for Veterinarian Surveillance Network
+class VetNetworkFarmItem {
+  final String farmId;
+  final String farmName;
+  final String farmerName;
+  final String district;
+  final String livestockType;
+  final int totalBirds;
+  final int currentMortality;
+  final String mortalityTrend;
+  final String feedTrend;
+  final String riskLevel; // 'critical', 'high', 'moderate', 'low'
+  final String environmentalRisk;
+  final String nearbyExposure;
+  final int activeCases;
+  final DateTime lastReportedAt;
+
+  const VetNetworkFarmItem({
+    required this.farmId,
+    required this.farmName,
+    required this.farmerName,
+    required this.district,
+    this.livestockType = 'Broiler (Cobb 500)',
+    this.totalBirds = 10000,
+    required this.currentMortality,
+    required this.mortalityTrend,
+    required this.feedTrend,
+    required this.riskLevel,
+    required this.environmentalRisk,
+    required this.nearbyExposure,
+    required this.activeCases,
+    required this.lastReportedAt,
+  });
+}
+
+/// Dedicated Veterinarian Multi-Farm Dashboard (Part 11)
 class VeterinarianDashboardScreen extends ConsumerStatefulWidget {
   final String? vetId;
   final String? district;
@@ -37,58 +64,121 @@ class VeterinarianDashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _VeterinarianDashboardScreenState extends ConsumerState<VeterinarianDashboardScreen> {
-  String _responseTrendRange = '7D';
+  String _riskFilter = 'ALL'; // 'ALL', 'CRITICAL', 'HIGH', 'MODERATE', 'LOW'
+  String _searchQuery = '';
+
+  List<VetNetworkFarmItem> _getNetworkFarms() {
+    final now = DateTime.now();
+    return [
+      VetNetworkFarmItem(
+        farmId: 'farm_demo_001',
+        farmName: 'Green Valley Poultry Farm',
+        farmerName: 'Ramesh Patil',
+        district: 'Nashik',
+        livestockType: 'Broiler (42d)',
+        totalBirds: 10000,
+        currentMortality: 15,
+        mortalityTrend: '5.0x (Spike)',
+        feedTrend: '-19.6% (Drop)',
+        riskLevel: 'critical',
+        environmentalRisk: 'HIGH (35°C, 82%)',
+        nearbyExposure: 'HIGH (2 cases in 7km)',
+        activeCases: 1,
+        lastReportedAt: now.subtract(const Duration(minutes: 14)),
+      ),
+      VetNetworkFarmItem(
+        farmId: 'farm_demo_002',
+        farmName: 'Sahyadri Poultry Centre',
+        farmerName: 'Vikram Shinde',
+        district: 'Nashik',
+        livestockType: 'Layer (Babcock)',
+        totalBirds: 14500,
+        currentMortality: 12,
+        mortalityTrend: '4.0x (Spike)',
+        feedTrend: '-14.0%',
+        riskLevel: 'critical',
+        environmentalRisk: 'HIGH (34°C, 80%)',
+        nearbyExposure: 'HIGH (10km cluster)',
+        activeCases: 1,
+        lastReportedAt: now.subtract(const Duration(hours: 1)),
+      ),
+      VetNetworkFarmItem(
+        farmId: 'farm_demo_004',
+        farmName: 'Shivneri Poultry Farm',
+        farmerName: 'Anil Deshmukh',
+        district: 'Nashik',
+        livestockType: 'Broiler (35d)',
+        totalBirds: 12000,
+        currentMortality: 8,
+        mortalityTrend: '2.6x (Elevated)',
+        feedTrend: '-8.5%',
+        riskLevel: 'high',
+        environmentalRisk: 'ALERT (32°C, 75%)',
+        nearbyExposure: 'MODERATE',
+        activeCases: 1,
+        lastReportedAt: now.subtract(const Duration(hours: 3)),
+      ),
+      VetNetworkFarmItem(
+        farmId: 'farm_demo_003',
+        farmName: 'Godavari Broiler Agro',
+        farmerName: 'Sanjay More',
+        district: 'Nashik',
+        livestockType: 'Broiler (21d)',
+        totalBirds: 8500,
+        currentMortality: 2,
+        mortalityTrend: 'Stable (1.0x)',
+        feedTrend: 'Normal (+1%)',
+        riskLevel: 'low',
+        environmentalRisk: 'NORMAL (25°C, 62%)',
+        nearbyExposure: 'LOW',
+        activeCases: 0,
+        lastReportedAt: now.subtract(const Duration(hours: 5)),
+      ),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
-    final displayName = user?.displayName ?? 'Dr. V. Sharma (Surgeon)';
+    final displayName = user?.displayName ?? 'Dr. V. Sharma (Duty Clinician)';
     final activeVetId = widget.vetId ?? user?.uid ?? 'vet_dr_sharma';
     final vetState = ref.watch(veterinarianDashboardProvider(activeVetId));
     final districtName = widget.district ?? vetState.activeDistrict;
 
-    final assignments = vetState.assignments;
-    final labTests = vetState.labTests;
-    final allCases = vetState.allCases;
+    final networkFarms = _getNetworkFarms();
 
-    final criticalCount = vetState.criticalCount;
-    final pendingReviewCount = vetState.pendingReviewCount;
-    final underInvestigationCount = vetState.underInvestigationCount;
-    final labResultsReadyCount = vetState.labResultsReadyCount;
-    final followUpsDueCount = vetState.followUpsDueCount;
-    final resolvedTodayCount = vetState.resolvedTodayCount;
+    // Counts
+    final totalFarms = networkFarms.length;
+    final criticalFarms = networkFarms.where((f) => f.riskLevel == 'critical').length;
+    final highFarms = networkFarms.where((f) => f.riskLevel == 'high').length;
+
+    // Filter & Search
+    final filteredFarms = networkFarms.where((f) {
+      final matchesFilter = _riskFilter == 'ALL' || f.riskLevel.toUpperCase() == _riskFilter;
+      final matchesSearch = f.farmName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          f.farmerName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          f.district.toLowerCase().contains(_searchQuery.toLowerCase());
+      return matchesFilter && matchesSearch;
+    }).toList();
+
+    // Default Critical first sorting
+    filteredFarms.sort((a, b) {
+      final order = {'critical': 0, 'high': 1, 'moderate': 2, 'low': 3};
+      return (order[a.riskLevel] ?? 4).compareTo(order[b.riskLevel] ?? 4);
+    });
 
     return PageContainer(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Web Page Header with Clinician Actions
+          // 1. Header
           WebPageHeader(
-            title: 'Veterinarian Clinical Triage Desk',
-            subtitle: 'Attending: $displayName • Authorized Zone: $districtName • Real-time clinical response & diagnostic triage',
+            title: 'Veterinarian Clinical Farm Network',
+            subtitle: 'Attending: $displayName • Service District: $districtName • Which farms require clinical attention?',
             actions: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppColors.healthyBg,
-                  borderRadius: BorderRadius.circular(AppDesign.radiusSm),
-                  border: Border.all(color: AppColors.healthy.withOpacity(0.3)),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.verified_user_outlined, size: 16, color: AppColors.healthy),
-                    SizedBox(width: 6),
-                    Text(
-                      'Licensed Duty Clinician',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.healthy),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
               AppButton(
-                label: 'Emergency Queue',
-                icon: Icons.emergency_outlined,
+                label: 'Emergency Queue (${vetState.criticalCount})',
+                icon: Icons.crisis_alert_rounded,
                 size: AppButtonSize.small,
                 variant: AppButtonVariant.primary,
                 onPressed: () {
@@ -101,106 +191,93 @@ class _VeterinarianDashboardScreenState extends ConsumerState<VeterinarianDashbo
             ],
           ),
 
-          // 2. 6 Focused Clinical Animated KPIs
+          // 2. Multi-Farm Network KPIs
           LayoutBuilder(
             builder: (context, constraints) {
-              final cardWidth = (constraints.maxWidth - 50) / 6;
               final isNarrow = constraints.maxWidth < 1100;
-              final itemWidth = isNarrow ? (constraints.maxWidth - 20) / 2 : cardWidth;
+              final cardWidth = isNarrow ? (constraints.maxWidth - 20) / 3 : (constraints.maxWidth - 50) / 6;
 
               return Wrap(
                 spacing: 10,
                 runSpacing: 10,
                 children: [
                   SizedBox(
-                    width: itemWidth,
+                    width: cardWidth,
                     child: AnimatedKpiCard(
-                      title: 'Critical P1 Cases',
-                      numericValue: criticalCount,
-                      suffix: 'Active',
-                      delta: criticalCount > 0 ? 'Urgent' : 'Clear',
-                      isPositiveDelta: criticalCount == 0,
-                      isIncreaseNegative: true,
-                      subtitle: 'Requires immediate triage',
-                      icon: Icons.crisis_alert_rounded,
-                      accentColor: AppColors.critical,
-                      isCritical: criticalCount > 0,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const VeterinarianCriticalQueueScreen()),
-                        );
-                      },
+                      title: 'Total Service Farms',
+                      numericValue: totalFarms,
+                      suffix: 'Farms',
+                      delta: '$districtName Zone',
+                      isPositiveDelta: true,
+                      subtitle: 'Active Assigned Network',
+                      icon: Icons.hub_outlined,
+                      accentColor: AppColors.primary,
                     ),
                   ),
                   SizedBox(
-                    width: itemWidth,
+                    width: cardWidth,
                     child: AnimatedKpiCard(
-                      title: 'Pending Review',
-                      numericValue: pendingReviewCount,
-                      suffix: 'Cases',
-                      delta: 'Triage queue',
-                      isPositiveDelta: true,
-                      subtitle: 'District escalated reports',
-                      icon: Icons.pending_actions_outlined,
+                      title: 'Critical Farms',
+                      numericValue: criticalFarms,
+                      suffix: 'Urgent',
+                      delta: criticalFarms > 0 ? 'Action Req' : 'Clear',
+                      isPositiveDelta: criticalFarms == 0,
+                      isIncreaseNegative: true,
+                      subtitle: 'Severe Anomaly / Spikes',
+                      icon: Icons.crisis_alert_rounded,
+                      accentColor: AppColors.critical,
+                      isCritical: criticalFarms > 0,
+                    ),
+                  ),
+                  SizedBox(
+                    width: cardWidth,
+                    child: AnimatedKpiCard(
+                      title: 'High Risk Farms',
+                      numericValue: highFarms,
+                      suffix: 'Elevated',
+                      delta: 'Triage Queue',
+                      isPositiveDelta: false,
+                      subtitle: 'Clinical anomalies logged',
+                      icon: Icons.warning_amber_rounded,
                       accentColor: AppColors.warning,
                     ),
                   ),
                   SizedBox(
-                    width: itemWidth,
+                    width: cardWidth,
                     child: AnimatedKpiCard(
-                      title: 'Under Investigation',
-                      numericValue: underInvestigationCount,
-                      suffix: 'Active',
-                      delta: 'Field visits',
+                      title: 'Active Health Cases',
+                      numericValue: vetState.criticalCount + vetState.pendingReviewCount,
+                      suffix: 'Cases',
+                      delta: 'Field Reports',
                       isPositiveDelta: true,
-                      subtitle: 'Differential diagnosis ongoing',
-                      icon: Icons.biotech_outlined,
+                      subtitle: 'Under Triage Protocol',
+                      icon: Icons.medical_services_outlined,
                       accentColor: AppColors.info,
                     ),
                   ),
                   SizedBox(
-                    width: itemWidth,
+                    width: cardWidth,
                     child: AnimatedKpiCard(
-                      title: 'Lab Results Ready',
-                      numericValue: labResultsReadyCount,
-                      suffix: 'Reports',
-                      delta: 'Verified',
+                      title: 'Lab Diagnostics',
+                      numericValue: vetState.labResultsReadyCount,
+                      suffix: 'Ready',
+                      delta: 'Assays Active',
                       isPositiveDelta: true,
-                      subtitle: 'RT-PCR & serology sign-off',
-                      icon: Icons.fact_check_outlined,
+                      subtitle: 'RT-PCR & Oocyst Tests',
+                      icon: Icons.biotech_outlined,
                       accentColor: AppColors.primary,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const VeterinarianLabResultsScreen()),
-                        );
-                      },
                     ),
                   ),
                   SizedBox(
-                    width: itemWidth,
+                    width: cardWidth,
                     child: AnimatedKpiCard(
                       title: 'Follow-Ups Due',
-                      numericValue: followUpsDueCount,
-                      suffix: 'Pending',
-                      delta: 'Recovery',
+                      numericValue: vetState.followUpsDueCount,
+                      suffix: 'Due',
+                      delta: '48h Checkpoints',
                       isPositiveDelta: true,
-                      subtitle: 'Post-treatment surveillance',
-                      icon: Icons.event_repeat_outlined,
-                      accentColor: AppColors.info,
-                    ),
-                  ),
-                  SizedBox(
-                    width: itemWidth,
-                    child: AnimatedKpiCard(
-                      title: 'Resolved Today',
-                      numericValue: resolvedTodayCount,
-                      suffix: 'Cases',
-                      delta: 'Discharged',
-                      isPositiveDelta: true,
-                      subtitle: 'Successful recovery closed',
-                      icon: Icons.task_alt_outlined,
+                      subtitle: 'Recovery verification',
+                      icon: Icons.update_rounded,
                       accentColor: AppColors.healthy,
                     ),
                   ),
@@ -208,112 +285,153 @@ class _VeterinarianDashboardScreenState extends ConsumerState<VeterinarianDashbo
               );
             },
           ),
-          const SizedBox(height: 20),
-
-          // 3. Regional Outbreak Cluster Warning Banner (Attending View)
-          OutbreakClusterAlertCard(district: districtName, isFarmerView: false),
-          const SizedBox(height: 20),
-
-          // 4. Clinical Triage Desk & Interactive Priority Queue
-          VetPriorityQueueCard(vetId: activeVetId, district: widget.district),
           const SizedBox(height: 24),
 
-          // 5. Interactive Clinical Analytics: Diagnostic Lab Pipeline & Response Velocity
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final isWide = constraints.maxWidth >= 960;
+          // 3. Multi-Farm Risk Table
+          AppCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Assigned & Service Area Poultry Farms', style: AppTypography.headingSmall),
+                    // Filter Chips
+                    Wrap(
+                      spacing: 6,
+                      children: ['ALL', 'CRITICAL', 'HIGH', 'MODERATE', 'LOW'].map((filter) {
+                        final isSelected = _riskFilter == filter;
+                        return ChoiceChip(
+                          label: Text(filter, style: TextStyle(fontSize: 11, fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500)),
+                          selected: isSelected,
+                          onSelected: (_) => setState(() => _riskFilter = filter),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
 
-              return Row(
+                // Search Bar
+                TextField(
+                  decoration: InputDecoration(
+                    hintText: 'Search by farm name, farmer, or district...',
+                    prefixIcon: const Icon(Icons.search, size: 20),
+                    isDense: true,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  ),
+                  onChanged: (val) => setState(() => _searchQuery = val),
+                ),
+                const SizedBox(height: 16),
+
+                // Table
+                ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: filteredFarms.length,
+                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  itemBuilder: (context, index) {
+                    final farm = filteredFarms[index];
+                    return _buildFarmRow(farm);
+                  },
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 32),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFarmRow(VetNetworkFarmItem farm) {
+    final isCritical = farm.riskLevel == 'critical';
+    final isHigh = farm.riskLevel == 'high';
+
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => FarmClinicalViewScreen(
+              farmId: farm.farmId,
+              farmName: farm.farmName,
+              farmerName: farm.farmerName,
+              district: farm.district,
+            ),
+          ),
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        child: Row(
+          children: [
+            // Risk Badge
+            StatusBadge(
+              label: farm.riskLevel.toUpperCase(),
+              type: isCritical ? StatusBadgeType.critical : (isHigh ? StatusBadgeType.warning : StatusBadgeType.healthy),
+            ),
+            const SizedBox(width: 14),
+
+            // Farm & Farmer
+            Expanded(
+              flex: 3,
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Left: Average Veterinary Response Time Velocity Curve
-                  Expanded(
-                    flex: isWide ? 6 : 1,
-                    child: AnimatedChartContainer(
-                      title: 'Average Veterinary Triage & Response Velocity',
-                      subtitle: 'Rolling 7-day average case acceptance time (minutes) from initial notification to clinical triage',
-                      selectedTimeRange: _responseTrendRange,
-                      onTimeRangeChanged: (val) => setState(() => _responseTrendRange = val),
-                      legendItems: const [
-                        LegendItemData(label: 'Avg Response Time (Minutes)', color: AppColors.primary),
-                        LegendItemData(label: 'SLA Target (20 Min)', color: AppColors.slate400, isDashed: true),
-                      ],
-                      height: 230,
-                      child: AnimatedLineChart(
-                        yUnit: 'm',
-                        maxY: 40,
-                        series: [
-                          LineChartSeriesData(
-                            name: 'Response Velocity',
-                            color: AppColors.primary,
-                            hasAreaFill: true,
-                            points: const [
-                              ChartDataPoint(x: 0, y: 28, label: 'D1'),
-                              ChartDataPoint(x: 1, y: 24, label: 'D2'),
-                              ChartDataPoint(x: 2, y: 21, label: 'D3'),
-                              ChartDataPoint(x: 3, y: 19, label: 'D4'),
-                              ChartDataPoint(x: 4, y: 22, label: 'D5'),
-                              ChartDataPoint(x: 5, y: 18, label: 'D6'),
-                              ChartDataPoint(x: 6, y: 16, label: 'Today'),
-                            ],
-                          ),
-                          LineChartSeriesData(
-                            name: 'SLA Target',
-                            color: AppColors.slate400,
-                            isDashed: true,
-                            hasAreaFill: false,
-                            strokeWidth: 1.5,
-                            points: const [
-                              ChartDataPoint(x: 0, y: 20, label: 'D1'),
-                              ChartDataPoint(x: 1, y: 20, label: 'D2'),
-                              ChartDataPoint(x: 2, y: 20, label: 'D3'),
-                              ChartDataPoint(x: 3, y: 20, label: 'D4'),
-                              ChartDataPoint(x: 4, y: 20, label: 'D5'),
-                              ChartDataPoint(x: 5, y: 20, label: 'D6'),
-                              ChartDataPoint(x: 6, y: 20, label: 'Today'),
-                            ],
-                          ),
-                        ],
-                      ),
+                  Text(farm.farmName, style: AppTypography.labelLarge.copyWith(fontWeight: FontWeight.w700)),
+                  Text('Farmer: ${farm.farmerName} • ${farm.district}', style: AppTypography.caption),
+                ],
+              ),
+            ),
+
+            // Mortality & Trends
+            Expanded(
+              flex: 2,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Mortality: ${farm.currentMortality} dead', style: AppTypography.bodySmall.copyWith(fontWeight: FontWeight.w600)),
+                  Text(farm.mortalityTrend, style: TextStyle(fontSize: 11, color: isCritical ? AppColors.critical : AppColors.slate600)),
+                ],
+              ),
+            ),
+
+            // Telemetry & Corridor
+            Expanded(
+              flex: 2,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Env: ${farm.environmentalRisk}', style: AppTypography.caption),
+                  Text('Corridor: ${farm.nearbyExposure}', style: TextStyle(fontSize: 11, color: AppColors.slate600)),
+                ],
+              ),
+            ),
+
+            // Action Button
+            AppButton(
+              label: 'Clinical Dossier',
+              icon: Icons.open_in_new_rounded,
+              size: AppButtonSize.small,
+              variant: AppButtonVariant.secondary,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => FarmClinicalViewScreen(
+                      farmId: farm.farmId,
+                      farmName: farm.farmName,
+                      farmerName: farm.farmerName,
+                      district: farm.district,
                     ),
                   ),
-
-                  if (isWide) const SizedBox(width: 20),
-
-                  // Right: Diagnostic Laboratory Pipeline Bar Chart
-                  if (isWide)
-                    Expanded(
-                      flex: 4,
-                      child: AnimatedChartContainer(
-                        title: 'Diagnostic Laboratory Sample Pipeline',
-                        subtitle: 'Current status distribution of clinical viral assays & necropsy samples',
-                        timeRanges: const [],
-                        height: 230,
-                        child: AnimatedBarChart(
-                          maxY: 8,
-                          unit: ' spl',
-                          items: const [
-                            BarChartItemData(label: 'Requested', value: 4, color: AppColors.info, payload: 'requested'),
-                            BarChartItemData(label: 'Collected', value: 3, color: AppColors.slate500, payload: 'collected'),
-                            BarChartItemData(label: 'In Testing', value: 5, color: AppColors.warning, payload: 'testing'),
-                            BarChartItemData(label: 'Ready', value: 6, color: AppColors.healthy, payload: 'ready'),
-                            BarChartItemData(label: 'Signed Off', value: 2, color: AppColors.primary, payload: 'reviewed'),
-                          ],
-                          onItemSelected: (payload) {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (_) => const VeterinarianLabResultsScreen()),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                ],
-              );
-            },
-          ),
-          const SizedBox(height: 24),
-        ],
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

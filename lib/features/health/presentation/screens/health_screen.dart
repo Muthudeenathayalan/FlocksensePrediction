@@ -63,8 +63,11 @@ class _HealthScreenState extends State<HealthScreen>
   Widget build(BuildContext context) {
     return StreamBuilder<List<HealthCaseModel>>(
       stream: HealthService.streamHealthCases(),
+      initialData: HealthService.getSampleHealthCases(),
       builder: (context, snapshot) {
-        final cases = snapshot.data ?? [];
+        final cases = (snapshot.data != null && snapshot.data!.isNotEmpty)
+            ? snapshot.data!
+            : HealthService.getSampleHealthCases();
         final activeCases = cases.where((c) => c.status != HealthCaseStatus.closed).toList();
         final criticalCases = cases.where((c) => c.riskLevel == HealthRiskLevel.critical || c.riskLevel == HealthRiskLevel.high).toList();
         final totalAffected = cases.fold<int>(0, (sum, c) => sum + c.affectedCount);

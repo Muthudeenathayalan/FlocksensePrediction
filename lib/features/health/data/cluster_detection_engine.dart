@@ -475,4 +475,95 @@ class ClusterDetectionEngine {
 
     return cluster;
   }
+
+  /// Pure static evaluation of multiple cases for cluster detection without Firestore dependency
+  static List<OutbreakClusterModel> detectClustersPure({
+    required List<HealthCaseWithLocation> casesWithLocation,
+  }) {
+    final clusters = <OutbreakClusterModel>[];
+    if (casesWithLocation.length < ClusterConfig.minimumDistinctFarms) return clusters;
+
+    for (final candidate in casesWithLocation) {
+      if (candidate.healthCase.riskLevel != HealthRiskLevel.high &&
+          candidate.healthCase.riskLevel != HealthRiskLevel.critical &&
+          candidate.healthCase.riskScore < 50) continue;
+      if (!candidate.location.isValid) continue;
+
+      final triggerSyndrome = normalizeSyndrome(candidate.healthCase.symptoms);
+      final matching = <HealthCaseWithLocation>[candidate];
+
+      for (final other in casesWithLocation) {
+        if (other.healthCase.id == candidate.healthCase.id) continue;
+        if (!other.location.isValid) continue;
+
+        final hoursDiff = candidate.healthCase.reportedAt.difference(other.healthCase.reportedAt).inHours.abs();
+        if (hoursDiff > ClusterConfig.timeWindowHours) continue;
+
+        final otherSyndrome = normalizeSyndrome(other.healthCase.symptoms);
+        if (otherSyndrome != triggerSyndrome) continue;
+
+        final distKm = calculateDistanceKm(
+          candidate.location.latitude,
+          candidate.location.longitude,
+          other.location.latitude,
+          other.location.longitude,
+        );
+        if (distKm > ClusterConfig.clusterRadiusKm) continue;
+
+        if (other.healthCase.riskLevel == HealthRiskLevel.high ||
+            other.healthCase.riskLevel == HealthRiskLevel.critical ||
+            other.healthCase.riskScore >= 50) {
+          matching.add(other);
+        }
+      }
+
+      final uniqueFarmIds = matching.map((m) => m.location.farmId).toSet().toList();
+      if (uniqueFarmIds.length >= ClusterConfig.minimumDistinctFarms) {
+        final uniqueLocations = <FarmLocation>[];
+        final seenFarms = <String>{};
+        for (final m in matching) {
+          if (!seenFarms.contains(m.location.farmId)) {
+            seenFarms.add(m.location.farmId);
+            uniqueLocations.add(m.location);
+          }
+        }
+        final centroid = calculateCentroid(uniqueLocations);
+        final radiusKm = calculateClusterRadius(centroid['lat']!, centroid['lng']!, uniqueLocations);
+        final conf = calculateClusterConfidence(
+          uniqueFarms: uniqueFarmIds.length,
+          hasVetDiagnosis: matching.any((m) => m.healthCase.diagnosis != null),
+          hasLabConfirmation: matching.any((m) => m.healthCase.labRequired == true),
+          radiusKm: radiusKm,
+        );
+        final cluster = OutbreakClusterModel(
+          id: 'cluster_detected_${uniqueFarmIds.join("_")}',
+          clusterCode: 'OUT-2026-NSK-001',
+          syndrome: triggerSyndrome,
+          possibleDisease: 'Respiratory Disease Cluster (Suspected NDV / IBV)',
+          caseIds: matching.map((m) => m.healthCase.id).toList(),
+          farmIds: uniqueFarmIds,
+          district: candidate.location.district,
+          state: candidate.location.state,
+          centerLatitude: centroid['lat']!,
+          centerLongitude: centroid['lng']!,
+          radiusKm: radiusKm,
+          caseCount: matching.length,
+          farmCount: uniqueFarmIds.length,
+          affectedCount: matching.fold<int>(0, (acc, m) => acc + m.healthCase.affectedCount),
+          mortalityCount: matching.fold<int>(0, (acc, m) => acc + m.healthCase.mortalityCount),
+          clusterConfidence: conf,
+          confidenceLabel: ClusterConfidenceLabel.fromScore(conf),
+          severity: 'high',
+          status: OutbreakClusterStatus.potential,
+          firstDetectedAt: matching.map((m) => m.healthCase.reportedAt).reduce((a, b) => a.isBefore(b) ? a : b),
+          lastCaseAt: matching.map((m) => m.healthCase.reportedAt).reduce((a, b) => a.isAfter(b) ? a : b),
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+        clusters.add(cluster);
+        break;
+      }
+    }
+    return clusters;
+  }
 }

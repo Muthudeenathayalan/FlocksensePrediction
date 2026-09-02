@@ -192,8 +192,9 @@ class _AiScreenState extends ConsumerState<AiScreen> {
 
           // Messages List View
           Expanded(
-            child: messagesAsync.when(
-              data: (messages) {
+            child: Builder(
+              builder: (context) {
+                final messages = messagesAsync.value ?? [];
                 if (messages.isEmpty) {
                   return Center(
                     child: Padding(
@@ -243,8 +244,6 @@ class _AiScreenState extends ConsumerState<AiScreen> {
                   },
                 );
               },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Error loading messages: $e')),
             ),
           ),
 

@@ -4,14 +4,12 @@ import 'package:flock_sense/core/providers/connectivity_provider.dart';
 import 'package:flock_sense/core/services/sync_service.dart';
 import 'package:flock_sense/core/widgets/adaptive_scaffold.dart';
 import 'package:flock_sense/features/ai/presentation/screens/ai_screen.dart';
-import 'package:flock_sense/features/auth/domain/user_model.dart';
 import 'package:flock_sense/features/auth/presentation/providers/auth_providers.dart';
 import 'package:flock_sense/features/batches/presentation/screens/batch_list_screen.dart';
-import 'package:flock_sense/features/daily_records/presentation/screens/daily_record_form_screen.dart';
 import 'package:flock_sense/features/daily_records/presentation/screens/daily_records_dashboard_screen.dart';
+import 'package:flock_sense/features/farms/presentation/providers/selected_farm_provider.dart';
 import 'package:flock_sense/features/farms/presentation/screens/farm_list_screen.dart';
 import 'package:flock_sense/features/feed/presentation/screens/feed_inventory_screen.dart';
-import 'package:flock_sense/features/finance/presentation/screens/finance_dashboard_screen.dart';
 import 'package:flock_sense/features/health/presentation/screens/farmer_disease_alerts_screen.dart';
 import 'package:flock_sense/features/health/presentation/screens/government_biosecurity_screen.dart';
 import 'package:flock_sense/features/health/presentation/screens/government_cases_screen.dart';
@@ -182,7 +180,7 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
     return _currentIndex < subtitles.length ? subtitles[_currentIndex] : null;
   }
 
-  List<Widget> get _screens {
+  List<Widget> _buildScreens(ActiveFarmContext activeFarm) {
     if (_currentRole == 'Government') {
       return [
         const GovernmentCommandCenterScreen(), // 0: Command Center
@@ -220,13 +218,13 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
     return [
       const FarmerDashboardScreen(), // 0: Dashboard
       const FarmListScreen(), // 1: My Farms
-      const BatchListScreen(farmId: 'farm_01', farmName: 'Primary Farm'), // 2: Flocks & Batches
+      BatchListScreen(farmId: activeFarm.farmId, farmName: activeFarm.farmName), // 2: Flocks & Batches
       const DailyRecordsDashboardScreen(), // 3: Daily Records
       const HealthScreen(), // 4: Health & Disease
       const VaccineRecordsScreen(), // 5: Vaccination
       const MedicineRecordsScreen(), // 6: Treatments
       const FarmerDiseaseAlertsScreen(), // 7: Disease Alerts & Biosecurity
-      const FeedInventoryScreen(farmId: 'farm_01', batchId: 'flock_01'), // 8: Feed & Water
+      FeedInventoryScreen(farmId: activeFarm.farmId, batchId: activeFarm.batchId ?? 'batch_demo_001', batchName: activeFarm.batchName), // 8: Feed & Water
       const InventoryDashboardScreen(), // 9: Inventory Stock
       const ReportsDashboardScreen(), // 10: Reports & Export
       const AiScreen(), // 11: AI Assistant
@@ -238,6 +236,7 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final activeFarm = ref.watch(activeFarmContextProvider);
     // Synchronize authoritative role from Firebase Profile unless explicitly overridden
     final authProfile = ref.watch(currentUserProfileProvider).value;
     if (authProfile != null && !_hasCustomRole) {
@@ -278,7 +277,7 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
       },
       body: IndexedStack(
         index: _currentIndex,
-        children: _screens,
+        children: _buildScreens(activeFarm),
       ),
     );
   }

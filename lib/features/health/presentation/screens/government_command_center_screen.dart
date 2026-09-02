@@ -6,6 +6,7 @@ import 'package:flock_sense/features/health/data/outbreak_cluster_service.dart';
 import 'package:flock_sense/features/health/domain/district_surveillance_model.dart';
 import 'package:flock_sense/features/health/domain/health_case_model.dart';
 import 'package:flock_sense/features/health/domain/outbreak_cluster_model.dart';
+import 'package:flock_sense/features/health/presentation/screens/government_farm_surveillance_detail_screen.dart';
 import 'package:flock_sense/features/health/presentation/widgets/outbreak_cluster_alert_card.dart';
 import 'package:flock_sense/features/health/presentation/widgets/surveillance_gis_map.dart';
 import 'package:flock_sense/shared/analytics/animated_bar_chart.dart';
@@ -977,6 +978,22 @@ class _GovernmentCommandCenterScreenState extends State<GovernmentCommandCenterS
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close')),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => GovernmentFarmSurveillanceDetailScreen(
+                    farmId: farm.farmId,
+                    farmName: farm.farmName,
+                    district: farm.district,
+                  ),
+                ),
+              );
+            },
+            child: const Text('Open Surveillance Dossier'),
+          ),
         ],
       ),
     );

@@ -9,7 +9,10 @@ enum BadgeVariant {
   highRisk,
   critical,
   neutral,
+  primary,
 }
+
+typedef StatusBadgeType = BadgeVariant;
 
 class StatusBadge extends StatelessWidget {
   final String label;
@@ -26,8 +29,9 @@ class StatusBadge extends StatelessWidget {
     this.backgroundColor,
     this.borderColor,
     this.icon,
-    this.variant,
-  });
+    BadgeVariant? variant,
+    StatusBadgeType? type,
+  }) : variant = variant ?? type;
 
   factory StatusBadge.fromStatus(String status) {
     final s = status.toLowerCase().trim();
@@ -105,6 +109,11 @@ class StatusBadge extends StatelessWidget {
           fg = AppColors.slate600;
           bg = AppColors.slate100;
           border = AppColors.slate200;
+          break;
+        case BadgeVariant.primary:
+          fg = AppColors.primary;
+          bg = AppColors.primaryLight;
+          border = AppColors.primaryLight;
           break;
       }
     } else if (color != null) {

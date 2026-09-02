@@ -253,16 +253,10 @@ class AIHealthAssessmentService {
       observedEvidence.add('Immunization signal: ${riskAssessment.vaccinationSignals.first}');
     }
 
-    // 2. Multimodal Photographic Evidence Extraction
+    // 2. Multimodal Photographic Evidence Handling (Part 8 Safety Rule)
     if (healthCase.imageUrls.isNotEmpty) {
-      if (isRespiratory) {
-        imageObservations.add('Possible peri-orbital facial edema and conjunctival swelling visible.');
-        imageObservations.add('Subdued flock posture with ruffled neck plumage.');
-      } else if (isDigestive) {
-        imageObservations.add('Cloacal feather contamination and watery/anomalous dropping texture.');
-      } else {
-        imageObservations.add('Subdued bird posture and reduced flock movement visible in evidence.');
-      }
+      imageObservations.add('Photographic Evidence: Uploaded (${healthCase.imageUrls.length} file(s)) — automated visual inference not performed.');
+      imageObservations.add('Image evidence serves as supportive context for attending veterinary physical examination.');
     } else {
       imageObservations.add('No photographic evidence was uploaded with this health case report.');
     }

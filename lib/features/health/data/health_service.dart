@@ -260,6 +260,9 @@ class HealthService {
     }
   }
 
+  /// Public access to sample health cases for immediate zero-latency UI rendering
+  static List<HealthCaseModel> getSampleHealthCases() => _getSampleHealthCases();
+
   /// Initial sample data for SIH presentation if Firestore collection is fresh
   static List<HealthCaseModel> _getSampleHealthCases() {
     final now = DateTime.now();

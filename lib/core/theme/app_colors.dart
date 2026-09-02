@@ -30,6 +30,7 @@ class AppColors {
   static const Color background = slate50;
   static const Color surface = Color(0xFFFFFFFF);
   static const Color surfaceSoft = slate100;
+  static const Color surfaceSubtle = slate50;
   static const Color surfaceElevated = Color(0xFFFFFFFF);
 
   // ── Text Tokens ─────────────────────────────────────────────────────────
@@ -85,6 +86,8 @@ class AppColors {
   static const Color error = critical;
   static const Color accent = warning;
   static const Color accentLight = warningBg;
+  static const Color warningLight = warningBg;
+  static const Color criticalLight = criticalBg;
   static const Color emerald = healthy;
   static const Color emeraldLight = healthyBg;
   static const Color gold = warning;

@@ -129,7 +129,33 @@ service cloud.firestore {
       allow write: if isAuthenticated();
     }
 
-    // 10. Audit Logs
+    // 10. Visitor & Biosecurity Events
+    match /visitor_events/{eventId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if isAdmin();
+    }
+
+    // 11. Farm Health Intelligence Cache
+    match /farm_intelligence/{intelId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // 12. Environmental Target Profiles
+    match /environmental_targets/{targetId} {
+      allow read: if isAuthenticated();
+      allow write: if isVeterinarian() || isGovernmentOfficer() || isAdmin();
+    }
+
+    // 13. Prevention Recommendations & Role Guidance
+    match /prevention_recommendations/{recId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // 14. Audit Logs
     match /audit_logs/{logId} {
       allow read: if isGovernmentOfficer() || isAdmin();
       allow create: if isAuthenticated();

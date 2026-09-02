@@ -79,6 +79,12 @@ class AppTypography {
     color: AppColors.textMuted,
   );
 
+  // ── Compatibility Aliases ────────────────────────────────────────────────
+  static const TextStyle headingLarge = headlineLarge;
+  static const TextStyle headingMedium = headlineMedium;
+  static const TextStyle headingSmall = headlineSmall;
+  static const TextStyle caption = metadata;
+
   // ── Material 3 Typography Scale ─────────────────────────────────────────
   static const TextStyle displayLarge = TextStyle(
     fontFamily: fontFamily,

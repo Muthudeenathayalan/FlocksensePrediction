@@ -61,7 +61,7 @@ class WeightRecordService {
 
     final record = WeightRecordModel(
       id: recordId,
-      userId: user.uid,
+      userId: uid,
       farmId: farmId,
       batchId: batchId,
       recordDate: recordDate,

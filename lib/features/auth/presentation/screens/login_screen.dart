@@ -45,7 +45,7 @@ class _LoginScreenState extends State<LoginScreen> {
     // 1. Instant access for demo credentials
     if (email.contains('flocksense') || email.contains('dahd.nic.in') || email == 'farmer@flocksense.in' || email.contains('vet')) {
       try {
-        await FirebaseAuth.instance.signInAnonymously();
+        await FirebaseAuth.instance.signInAnonymously().timeout(const Duration(milliseconds: 600));
       } catch (_) {}
       if (!mounted) return;
       Navigator.pushAndRemoveUntil(

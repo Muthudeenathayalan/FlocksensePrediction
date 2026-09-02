@@ -65,6 +65,8 @@ class FarmService {
     ),
   ];
 
+  static List<FarmModel> get inMemoryFarms => List<FarmModel>.from(_inMemoryFarms);
+
   static final StreamController<List<FarmModel>> _farmsStreamController =
       StreamController<List<FarmModel>>.broadcast();
 

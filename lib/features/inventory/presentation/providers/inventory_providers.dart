@@ -45,16 +45,17 @@ final inventoryStreamProvider = StreamProvider.autoDispose<List<InventoryItemMod
 
   return authState.when(
     data: (user) {
-      if (user == null) return Stream.value([]);
+      if (user == null) return Stream.value(InventoryService.sampleInventoryItems);
       return service.watchInventoryItems(uid: user.uid, farmId: activeFarmId);
     },
-    loading: () => Stream.value([]),
-    error: (_, __) => Stream.value([]),
+    loading: () => Stream.value(InventoryService.sampleInventoryItems),
+    error: (_, __) => Stream.value(InventoryService.sampleInventoryItems),
   );
 });
 
 final filteredInventoryListProvider = Provider.autoDispose<List<InventoryItemModel>>((ref) {
-  final items = ref.watch(inventoryStreamProvider).value ?? [];
+  final rawItems = ref.watch(inventoryStreamProvider).value ?? InventoryService.sampleInventoryItems;
+  final items = rawItems.isNotEmpty ? rawItems : InventoryService.sampleInventoryItems;
   final query = ref.watch(inventorySearchQueryProvider).toLowerCase().trim();
   final category = ref.watch(inventoryCategoryFilterProvider);
   final sort = ref.watch(inventorySortProvider);
