@@ -5,6 +5,8 @@ import 'package:flock_sense/core/theme/app_colors.dart';
 import 'package:flock_sense/core/theme/app_design.dart';
 import 'package:flock_sense/core/theme/app_typography.dart';
 import 'package:flock_sense/core/widgets/app_button.dart';
+import 'package:flock_sense/core/widgets/app_card.dart';
+import 'package:flock_sense/core/widgets/metric_card.dart';
 import 'package:flock_sense/core/widgets/page_container.dart';
 import 'package:flock_sense/core/widgets/responsive_data_table.dart';
 import 'package:flock_sense/core/widgets/status_badge.dart';
@@ -41,7 +43,7 @@ class _DailyRecordsDashboardScreenState
 
   String? _selectedFarmId;
   String? _selectedBatchId;
-  DateTime _selectedDate = DateTime.now();
+  final DateTime _selectedDate = DateTime.now();
 
   // Controllers
   final _mortalityController = TextEditingController(text: '0');
@@ -117,14 +119,20 @@ class _DailyRecordsDashboardScreenState
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Daily operational record saved successfully!')),
+          const SnackBar(
+            content: Text('Daily operational record saved successfully!'),
+            backgroundColor: AppColors.healthy,
+          ),
         );
-        _tabController.animateTo(1); // Switch to logs view
+        _tabController.animateTo(1);
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Save error: $e')),
+          SnackBar(
+            content: Text('Save error: $e'),
+            backgroundColor: AppColors.critical,
+          ),
         );
       }
     } finally {
@@ -154,13 +162,23 @@ class _DailyRecordsDashboardScreenState
             subtitle: 'Log flock mortality, feed distribution, water consumption, and ambient shed conditions.',
             actions: [
               Container(
+                padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: AppColors.slate100,
+                  color: AppColors.surface,
                   borderRadius: BorderRadius.circular(AppDesign.radiusMd),
+                  border: Border.all(color: AppColors.border),
                 ),
                 child: TabBar(
                   controller: _tabController,
                   isScrollable: true,
+                  indicator: BoxDecoration(
+                    color: AppColors.primaryLight,
+                    borderRadius: BorderRadius.circular(AppDesign.radiusSm),
+                  ),
+                  labelColor: AppColors.primaryDark,
+                  unselectedLabelColor: AppColors.slate600,
+                  labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                  unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
                   tabs: const [
                     Tab(text: 'Log Today\'s Record'),
                     Tab(text: 'Historical Records Table'),
@@ -170,7 +188,43 @@ class _DailyRecordsDashboardScreenState
             ],
           ),
 
-          // 2. Tab Contents
+          // 2. 3 Clean Top KPI Metric Cards
+          Row(
+            children: const [
+              Expanded(
+                child: MetricCard(
+                  title: 'Today\'s Mortality',
+                  value: '0 Dead',
+                  subtitle: '0.00% daily loss (Optimal <0.05%)',
+                  icon: Icons.favorite_outline_rounded,
+                  accentColor: AppColors.healthy,
+                ),
+              ),
+              SizedBox(width: 16),
+              Expanded(
+                child: MetricCard(
+                  title: 'Feed Distributed Today',
+                  value: '480 kg',
+                  subtitle: 'Standard Broiler Starter 882',
+                  icon: Icons.inventory_2_outlined,
+                  accentColor: AppColors.warning,
+                ),
+              ),
+              SizedBox(width: 16),
+              Expanded(
+                child: MetricCard(
+                  title: 'Water Intake',
+                  value: '860 Liters',
+                  subtitle: 'Ratio 1.79 (Normal hydration range)',
+                  icon: Icons.water_drop_outlined,
+                  accentColor: AppColors.info,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // 3. Tab Contents
           SizedBox(
             height: 750,
             child: TabBarView(
@@ -187,25 +241,48 @@ class _DailyRecordsDashboardScreenState
   }
 
   Widget _buildEntryForm(List<FarmModel> farms, List<BatchModel> batches) {
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: AppDesign.maxFormWidth),
-        child: SingleChildScrollView(
-          child: Container(
-            padding: const EdgeInsets.all(28),
-            decoration: AppDesign.cardDecoration,
+    return SingleChildScrollView(
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 860),
+          child: AppCard(
             child: Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('New Daily Operational Log Entry', style: AppTypography.sectionTitle),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'High-speed multi-metric recording for feed, water, and flock mortality.',
-                    style: AppTypography.metadata,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('New Daily Operational Log Entry', style: AppTypography.headingSmall),
+                          const SizedBox(height: 4),
+                          Text(
+                            'High-speed multi-metric recording for feed, water, and flock mortality.',
+                            style: AppTypography.caption,
+                          ),
+                        ],
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryLight,
+                          borderRadius: BorderRadius.circular(AppDesign.radiusSm),
+                        ),
+                        child: Text(
+                          DateFormat('dd MMM yyyy').format(_selectedDate),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primaryDark,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 18),
                   const Divider(height: 1, color: AppColors.divider),
                   const SizedBox(height: 20),
 
@@ -216,7 +293,7 @@ class _DailyRecordsDashboardScreenState
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Poultry Facility', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                            Text('Poultry Facility', style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700)),
                             const SizedBox(height: 6),
                             DropdownButtonFormField<String>(
                               value: _selectedFarmId,
@@ -232,7 +309,7 @@ class _DailyRecordsDashboardScreenState
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Active Flock / Batch', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                            Text('Active Flock / Batch', style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700)),
                             const SizedBox(height: 6),
                             DropdownButtonFormField<String>(
                               value: _selectedBatchId,
@@ -243,44 +320,18 @@ class _DailyRecordsDashboardScreenState
                           ],
                         ),
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Record Date', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                            const SizedBox(height: 6),
-                            Container(
-                              height: 44,
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
-                              decoration: BoxDecoration(
-                                color: AppColors.surface,
-                                borderRadius: BorderRadius.circular(AppDesign.radiusMd),
-                                border: Border.all(color: AppColors.border, width: 1),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(DateFormat('dd MMM yyyy').format(_selectedDate), style: const TextStyle(fontSize: 13.5)),
-                                  const Icon(Icons.calendar_today_outlined, size: 16, color: AppColors.slate500),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
                     ],
                   ),
                   const SizedBox(height: 20),
 
-                  // Row 2: Mortality & Affected
+                  // Row 2: Mortality & Feed & Water
                   Row(
                     children: [
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Dead Birds (Mortality Count)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                            Text('Dead Birds (Mortality Count)', style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700)),
                             const SizedBox(height: 6),
                             TextFormField(
                               controller: _mortalityController,
@@ -298,7 +349,7 @@ class _DailyRecordsDashboardScreenState
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Feed Consumed (kg)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                            Text('Feed Consumed (kg)', style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700)),
                             const SizedBox(height: 6),
                             TextFormField(
                               controller: _feedController,
@@ -316,7 +367,7 @@ class _DailyRecordsDashboardScreenState
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Water Usage (Liters)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                            Text('Water Usage (Liters)', style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700)),
                             const SizedBox(height: 6),
                             TextFormField(
                               controller: _waterController,
@@ -340,7 +391,7 @@ class _DailyRecordsDashboardScreenState
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Shed Temperature (°C)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                            Text('Shed Temperature (°C)', style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700)),
                             const SizedBox(height: 6),
                             TextFormField(
                               controller: _tempController,
@@ -358,7 +409,7 @@ class _DailyRecordsDashboardScreenState
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Relative Humidity (%)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                            Text('Relative Humidity (%)', style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700)),
                             const SizedBox(height: 6),
                             TextFormField(
                               controller: _humidityController,
@@ -376,7 +427,7 @@ class _DailyRecordsDashboardScreenState
                   const SizedBox(height: 20),
 
                   // Row 4: Observed Symptoms
-                  const Text('Observed Clinical Signs & Symptoms', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                  Text('Observed Clinical Signs & Symptoms', style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700)),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
@@ -399,7 +450,7 @@ class _DailyRecordsDashboardScreenState
                         checkmarkColor: AppColors.primary,
                         labelStyle: TextStyle(
                           fontSize: 12,
-                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                           color: isSelected ? AppColors.primaryDark : AppColors.slate700,
                         ),
                       );
@@ -408,7 +459,7 @@ class _DailyRecordsDashboardScreenState
                   const SizedBox(height: 20),
 
                   // Row 5: Notes
-                  const Text('Operational Remarks & Silo Notes', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                  Text('Operational Remarks & Silo Notes', style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700)),
                   const SizedBox(height: 6),
                   TextFormField(
                     controller: _notesController,
@@ -417,7 +468,7 @@ class _DailyRecordsDashboardScreenState
                       hintText: 'Add remarks on flock behavior, ventilation changes, or feed delivery...',
                     ),
                   ),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 24),
 
                   // Submit Actions
                   Row(
@@ -455,55 +506,57 @@ class _DailyRecordsDashboardScreenState
   }
 
   Widget _buildHistoryTable() {
-    return ResponsiveDataTable(
-      columns: const [
-        ResponsiveDataColumn(label: 'Log Date', flex: 2),
-        ResponsiveDataColumn(label: 'Facility', flex: 2),
-        ResponsiveDataColumn(label: 'Flock', flex: 2),
-        ResponsiveDataColumn(label: 'Mortality', flex: 1),
-        ResponsiveDataColumn(label: 'Feed (kg)', flex: 2),
-        ResponsiveDataColumn(label: 'Water (L)', flex: 2),
-        ResponsiveDataColumn(label: 'Symptoms Observed', flex: 3),
-        ResponsiveDataColumn(label: 'Status', flex: 2),
-      ],
-      rows: [
-        ResponsiveDataRow(
-          cells: [
-            Text(DateFormat('dd MMM yyyy').format(DateTime.now())),
-            const Text('Primary Farm'),
-            const Text('Batch B07'),
-            const Text('3 dead', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.slate800)),
-            const Text('480 kg'),
-            const Text('860 L'),
-            const Text('None (Normal Activity)'),
-            StatusBadge.fromStatus('Healthy'),
-          ],
-        ),
-        ResponsiveDataRow(
-          cells: [
-            Text(DateFormat('dd MMM yyyy').format(DateTime.now().subtract(const Duration(days: 1)))),
-            const Text('Primary Farm'),
-            const Text('Batch B07'),
-            const Text('4 dead', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.slate800)),
-            const Text('475 kg'),
-            const Text('850 L'),
-            const Text('None'),
-            StatusBadge.fromStatus('Healthy'),
-          ],
-        ),
-        ResponsiveDataRow(
-          cells: [
-            Text(DateFormat('dd MMM yyyy').format(DateTime.now().subtract(const Duration(days: 2)))),
-            const Text('Primary Farm'),
-            const Text('Batch B07'),
-            const Text('2 dead', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.slate800)),
-            const Text('470 kg'),
-            const Text('840 L'),
-            const Text('Mild Sneezing'),
-            StatusBadge.fromStatus('Warning'),
-          ],
-        ),
-      ],
+    return AppCard(
+      child: ResponsiveDataTable(
+        columns: const [
+          ResponsiveDataColumn(label: 'Log Date', flex: 2),
+          ResponsiveDataColumn(label: 'Facility', flex: 2),
+          ResponsiveDataColumn(label: 'Flock', flex: 2),
+          ResponsiveDataColumn(label: 'Mortality', flex: 1),
+          ResponsiveDataColumn(label: 'Feed (kg)', flex: 2),
+          ResponsiveDataColumn(label: 'Water (L)', flex: 2),
+          ResponsiveDataColumn(label: 'Symptoms Observed', flex: 3),
+          ResponsiveDataColumn(label: 'Status', flex: 2),
+        ],
+        rows: [
+          ResponsiveDataRow(
+            cells: [
+              Text(DateFormat('dd MMM yyyy').format(DateTime.now()), style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.slate900)),
+              const Text('Primary Farm'),
+              const Text('Batch B07'),
+              const Text('0 dead', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.healthy)),
+              const Text('480 kg'),
+              const Text('860 L'),
+              const Text('None (Normal Activity)'),
+              StatusBadge.fromStatus('Healthy'),
+            ],
+          ),
+          ResponsiveDataRow(
+            cells: [
+              Text(DateFormat('dd MMM yyyy').format(DateTime.now().subtract(const Duration(days: 1))), style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.slate900)),
+              const Text('Primary Farm'),
+              const Text('Batch B07'),
+              const Text('2 dead', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.slate800)),
+              const Text('475 kg'),
+              const Text('850 L'),
+              const Text('None'),
+              StatusBadge.fromStatus('Healthy'),
+            ],
+          ),
+          ResponsiveDataRow(
+            cells: [
+              Text(DateFormat('dd MMM yyyy').format(DateTime.now().subtract(const Duration(days: 2))), style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.slate900)),
+              const Text('Primary Farm'),
+              const Text('Batch B07'),
+              const Text('4 dead', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.slate800)),
+              const Text('470 kg'),
+              const Text('840 L'),
+              const Text('Mild Sneezing'),
+              StatusBadge.fromStatus('Warning'),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

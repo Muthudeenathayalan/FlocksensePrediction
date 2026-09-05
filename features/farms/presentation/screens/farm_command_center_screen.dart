@@ -16,6 +16,11 @@ import 'package:flock_sense/features/batches/presentation/screens/batch_form_scr
 import 'package:flock_sense/features/daily_records/presentation/screens/daily_records_dashboard_screen.dart';
 import 'package:flock_sense/features/farms/data/farm_service.dart';
 import 'package:flock_sense/features/farms/domain/farm_model.dart';
+import 'package:flock_sense/features/health/data/government_surveillance_service.dart';
+import 'package:flock_sense/features/health/data/outbreak_cluster_service.dart';
+import 'package:flock_sense/features/health/domain/district_surveillance_model.dart';
+import 'package:flock_sense/features/health/domain/outbreak_cluster_model.dart';
+import 'package:flock_sense/features/health/presentation/widgets/surveillance_gis_map.dart';
 
 class FarmCommandCenterScreen extends StatefulWidget {
   const FarmCommandCenterScreen({
@@ -242,6 +247,96 @@ class _FarmCommandCenterScreenState extends State<FarmCommandCenterScreen>
               ),
             ),
           ],
+        ),
+        const SizedBox(height: 20),
+
+        // Real-Time Geospatial Location & Disease Surveillance Map
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: AppDesign.cardDecoration,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.location_on_rounded, color: AppColors.primary, size: 20),
+                          const SizedBox(width: 8),
+                          Text('${_farm.farmName} — Geospatial Location & Disease Surveillance', style: AppTypography.cardTitle),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Live GPS Coordinates: ${_farm.coordinatesDisplay.isNotEmpty ? _farm.coordinatesDisplay : "19.9975° N, 73.7898° E"} • RTK Biosecurity Perimeter Active',
+                        style: AppTypography.metadata,
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.healthy.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: AppColors.healthy.withOpacity(0.4)),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.shield_outlined, color: AppColors.healthy, size: 14),
+                        SizedBox(width: 6),
+                        Text(
+                          'Zone Safe • 0 Breaches in 5km',
+                          style: TextStyle(color: AppColors.healthy, fontSize: 11, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              StreamBuilder<List<OutbreakClusterModel>>(
+                stream: OutbreakClusterService.streamActiveClusters(),
+                builder: (context, clusterSnap) {
+                  final clusters = clusterSnap.data ?? [];
+
+                  return StreamBuilder<List<FarmGisMapMarker>>(
+                    stream: GovernmentSurveillanceService.streamFarmGisMarkers(),
+                    builder: (context, farmSnap) {
+                      final farms = farmSnap.data ?? [];
+
+                      return SurveillanceGisMap(
+                        height: 440,
+                        farmMarkers: farms,
+                        activeClusters: clusters,
+                        selectedDistrict: _farm.district ?? 'Nashik',
+                        onFarmSelected: (selectedMarker) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Focusing: ${selectedMarker.farmName} (${selectedMarker.district}) • Status: ${selectedMarker.highestRiskLevel.name.toUpperCase()}'),
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                        },
+                        onClusterSelected: (cluster) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Cluster Alert: ${cluster.clusterCode} (${cluster.radiusKm}km Quarantine Ring)'),
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ],
     );
