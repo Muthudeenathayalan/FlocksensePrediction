@@ -2,6 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:flock_sense/core/theme/app_colors.dart';
+import 'package:flock_sense/core/theme/app_design.dart';
+import 'package:flock_sense/core/theme/app_typography.dart';
+import 'package:flock_sense/core/widgets/app_button.dart';
+import 'package:flock_sense/core/widgets/app_card.dart';
+import 'package:flock_sense/core/widgets/page_container.dart';
+import 'package:flock_sense/core/widgets/web_page_header.dart';
 import 'package:flock_sense/features/auth/presentation/providers/auth_provider.dart';
 import 'package:flock_sense/features/farms/presentation/providers/farm_providers.dart';
 import 'package:flock_sense/features/home/presentation/providers/home_dashboard_provider.dart';
@@ -92,330 +98,454 @@ class _InventoryItemFormScreenState extends ConsumerState<InventoryItemFormScree
   Widget build(BuildContext context) {
     final isEdit = widget.existingItem != null;
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text(isEdit ? 'Edit Inventory Item' : 'Add Inventory Item'),
-        backgroundColor: AppColors.primaryDark,
-        foregroundColor: Colors.white,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Category Selection
-              const Text('Item Category *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-              const SizedBox(height: 6),
-              DropdownButtonFormField<String>(
-                value: _category,
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  filled: true,
-                  fillColor: Colors.white,
-                ),
-                items: const [
-                  DropdownMenuItem(value: 'Feed', child: Text('Feed')),
-                  DropdownMenuItem(value: 'Medicine', child: Text('Medicine')),
-                  DropdownMenuItem(value: 'Vaccines', child: Text('Vaccines')),
-                  DropdownMenuItem(value: 'Equipment', child: Text('Equipment')),
-                ],
-                onChanged: (val) {
-                  if (val != null) {
-                    setState(() {
-                      _category = val;
-                      _unit = _defaultUnitForCategory(val);
-                    });
-                  }
-                },
-              ),
-              const SizedBox(height: 16),
-
-              // Item Name
-              TextFormField(
-                controller: _nameController,
-                decoration: InputDecoration(
-                  labelText: 'Item Name *',
-                  hintText: 'e.g. Starter Feed, Amoxicillin 10%',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  filled: true,
-                  fillColor: Colors.white,
-                ),
-                validator: (val) =>
-                    (val == null || val.trim().isEmpty) ? 'Please enter item name' : null,
-              ),
-              const SizedBox(height: 14),
-
-              // Brand & Supplier
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _brandController,
-                      decoration: InputDecoration(
-                        labelText: 'Brand / Manufacturer',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        filled: true,
-                        fillColor: Colors.white,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _supplierController,
-                      decoration: InputDecoration(
-                        labelText: 'Supplier Name',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        filled: true,
-                        fillColor: Colors.white,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-
-              // Quantity & Unit
-              Row(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: TextFormField(
-                      controller: _quantityController,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: InputDecoration(
-                        labelText: 'Quantity Available *',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        filled: true,
-                        fillColor: Colors.white,
-                      ),
-                      validator: (val) {
-                        if (val == null || val.trim().isEmpty) return 'Enter quantity';
-                        final q = double.tryParse(val.trim());
-                        if (q == null || q < 0) return 'Invalid quantity';
-                        return null;
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    flex: 1,
-                    child: DropdownButtonFormField<String>(
-                      value: _unit,
-                      decoration: InputDecoration(
-                        labelText: 'Unit *',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        filled: true,
-                        fillColor: Colors.white,
-                      ),
-                      items: const [
-                        DropdownMenuItem(value: 'kg', child: Text('kg')),
-                        DropdownMenuItem(value: 'Liters', child: Text('Liters')),
-                        DropdownMenuItem(value: 'Bags', child: Text('Bags')),
-                        DropdownMenuItem(value: 'Doses', child: Text('Doses')),
-                        DropdownMenuItem(value: 'Pieces', child: Text('Pieces')),
-                        DropdownMenuItem(value: 'Units', child: Text('Units')),
-                      ],
-                      onChanged: (val) {
-                        if (val != null) setState(() => _unit = val);
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-
-              // Minimum Stock Level & Storage Location
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _minStockController,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: InputDecoration(
-                        labelText: 'Min Stock Level *',
-                        helperText: 'Alert badge threshold',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        filled: true,
-                        fillColor: Colors.white,
-                      ),
-                      validator: (val) {
-                        if (val == null || val.trim().isEmpty) return 'Enter min stock';
-                        final m = double.tryParse(val.trim());
-                        if (m == null || m < 0) return 'Invalid number';
-                        return null;
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _storageLocationController,
-                      decoration: InputDecoration(
-                        labelText: 'Storage Location *',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        filled: true,
-                        fillColor: Colors.white,
-                      ),
-                      validator: (val) =>
-                          (val == null || val.trim().isEmpty) ? 'Enter location' : null,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-
-              // Purchase Price & Selling Price
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _purchasePriceController,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: InputDecoration(
-                        labelText: 'Purchase Price (₹) *',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        filled: true,
-                        fillColor: Colors.white,
-                      ),
-                      validator: (val) {
-                        if (val == null || val.trim().isEmpty) return 'Enter price';
-                        final p = double.tryParse(val.trim());
-                        if (p == null || p < 0) return 'Invalid price';
-                        return null;
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _sellingPriceController,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: InputDecoration(
-                        labelText: 'Selling Price (₹)',
-                        helperText: 'Optional',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        filled: true,
-                        fillColor: Colors.white,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-
-              // Dates: Purchase Date & Expiry Date
-              Row(
-                children: [
-                  Expanded(
-                    child: InkWell(
-                      onTap: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: _purchaseDate,
-                          firstDate: DateTime(2020),
-                          lastDate: DateTime.now(),
-                        );
-                        if (picked != null) setState(() => _purchaseDate = picked);
-                      },
-                      child: InputDecorator(
-                        decoration: InputDecoration(
-                          labelText: 'Purchase Date *',
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                          filled: true,
-                          fillColor: Colors.white,
-                        ),
-                        child: Text(_dateFormat.format(_purchaseDate)),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: InkWell(
-                      onTap: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: _expiryDate ?? DateTime.now().add(const Duration(days: 180)),
-                          firstDate: DateTime.now().subtract(const Duration(days: 30)),
-                          lastDate: DateTime.now().add(const Duration(days: 3650)),
-                        );
-                        if (picked != null) setState(() => _expiryDate = picked);
-                      },
-                      child: InputDecorator(
-                        decoration: InputDecoration(
-                          labelText: 'Expiry Date',
-                          helperText: 'Optional',
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                          filled: true,
-                          fillColor: Colors.white,
-                          suffixIcon: _expiryDate != null
-                              ? IconButton(
-                                  icon: const Icon(Icons.clear, size: 18),
-                                  onPressed: () => setState(() => _expiryDate = null),
-                                )
-                              : null,
-                        ),
-                        child: Text(_expiryDate != null ? _dateFormat.format(_expiryDate!) : 'None'),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-
-              // Batch Number & Notes
-              TextFormField(
-                controller: _batchNumberController,
-                decoration: InputDecoration(
-                  labelText: 'Batch / Lot Number',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  filled: true,
-                  fillColor: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 14),
-
-              TextFormField(
-                controller: _notesController,
-                maxLines: 3,
-                decoration: InputDecoration(
-                  labelText: 'Notes / Remarks',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  filled: true,
-                  fillColor: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Save Button
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  ),
-                  onPressed: _isSaving ? null : _saveItem,
-                  child: _isSaving
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
-                        )
-                      : Text(
-                          isEdit ? 'Update Item' : 'Save Item to Inventory',
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                ),
+    return PageContainer(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 1. Web Page Header with Back Action
+          WebPageHeader(
+            title: isEdit ? 'Edit Stock Item' : 'Add Inventory Item',
+            subtitle: isEdit
+                ? 'Update specifications, quantity adjustments, and pricing for this stock asset.'
+                : 'Register a new feed, medicine, vaccine, or farm equipment item in stock.',
+            actions: [
+              AppButton(
+                label: 'Back to Inventory',
+                icon: Icons.arrow_back_rounded,
+                variant: AppButtonVariant.outlined,
+                size: AppButtonSize.small,
+                onPressed: () => Navigator.pop(context),
               ),
             ],
           ),
-        ),
+
+          // 2. Centered Form in AppCard
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 820),
+              child: AppCard(
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Item Specifications & Details', style: AppTypography.headingSmall),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryLight,
+                              borderRadius: BorderRadius.circular(AppDesign.radiusSm),
+                            ),
+                            child: Text(
+                              _category.toUpperCase(),
+                              style: const TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primaryDark,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      const Divider(height: 1, color: AppColors.divider),
+                      const SizedBox(height: 20),
+
+                      // Row 1: Category & Name
+                      Row(
+                        children: [
+                          Expanded(
+                            flex: 1,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Item Category *', style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700)),
+                                const SizedBox(height: 6),
+                                DropdownButtonFormField<String>(
+                                  value: _category,
+                                  decoration: const InputDecoration(isDense: true),
+                                  items: const [
+                                    DropdownMenuItem(value: 'Feed', child: Text('Feed')),
+                                    DropdownMenuItem(value: 'Medicine', child: Text('Medicine')),
+                                    DropdownMenuItem(value: 'Vaccines', child: Text('Vaccines')),
+                                    DropdownMenuItem(value: 'Equipment', child: Text('Equipment')),
+                                  ],
+                                  onChanged: (val) {
+                                    if (val != null) {
+                                      setState(() {
+                                        _category = val;
+                                        _unit = _defaultUnitForCategory(val);
+                                      });
+                                    }
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            flex: 2,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Item Name *', style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700)),
+                                const SizedBox(height: 6),
+                                TextFormField(
+                                  controller: _nameController,
+                                  decoration: const InputDecoration(
+                                    hintText: 'e.g. Starter Feed, Amoxicillin 10%',
+                                    isDense: true,
+                                  ),
+                                  validator: (val) =>
+                                      (val == null || val.trim().isEmpty) ? 'Please enter item name' : null,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 18),
+
+                      // Row 2: Brand & Supplier
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Brand / Manufacturer', style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700)),
+                                const SizedBox(height: 6),
+                                TextFormField(
+                                  controller: _brandController,
+                                  decoration: const InputDecoration(
+                                    hintText: 'e.g. Suguna / Venkys / Hester',
+                                    isDense: true,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Supplier Name', style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700)),
+                                const SizedBox(height: 6),
+                                TextFormField(
+                                  controller: _supplierController,
+                                  decoration: const InputDecoration(
+                                    hintText: 'e.g. Namakkal Agro Agencies',
+                                    isDense: true,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 18),
+
+                      // Row 3: Quantity & Unit
+                      Row(
+                        children: [
+                          Expanded(
+                            flex: 2,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Quantity Available *', style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700)),
+                                const SizedBox(height: 6),
+                                TextFormField(
+                                  controller: _quantityController,
+                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                  decoration: const InputDecoration(
+                                    hintText: '0',
+                                    isDense: true,
+                                  ),
+                                  validator: (val) {
+                                    if (val == null || val.trim().isEmpty) return 'Enter quantity';
+                                    final q = double.tryParse(val.trim());
+                                    if (q == null || q < 0) return 'Invalid quantity';
+                                    return null;
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            flex: 1,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Unit *', style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700)),
+                                const SizedBox(height: 6),
+                                DropdownButtonFormField<String>(
+                                  value: _unit,
+                                  decoration: const InputDecoration(isDense: true),
+                                  items: const [
+                                    DropdownMenuItem(value: 'kg', child: Text('kg')),
+                                    DropdownMenuItem(value: 'Liters', child: Text('Liters')),
+                                    DropdownMenuItem(value: 'Bags', child: Text('Bags')),
+                                    DropdownMenuItem(value: 'Doses', child: Text('Doses')),
+                                    DropdownMenuItem(value: 'Pieces', child: Text('Pieces')),
+                                    DropdownMenuItem(value: 'Units', child: Text('Units')),
+                                  ],
+                                  onChanged: (val) {
+                                    if (val != null) setState(() => _unit = val);
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 18),
+
+                      // Row 4: Minimum Stock Level & Storage Location
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Min Stock Level (Alert Threshold) *', style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700)),
+                                const SizedBox(height: 6),
+                                TextFormField(
+                                  controller: _minStockController,
+                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                  decoration: const InputDecoration(
+                                    hintText: '10',
+                                    isDense: true,
+                                  ),
+                                  validator: (val) {
+                                    if (val == null || val.trim().isEmpty) return 'Enter min stock';
+                                    final m = double.tryParse(val.trim());
+                                    if (m == null || m < 0) return 'Invalid number';
+                                    return null;
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Storage Location *', style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700)),
+                                const SizedBox(height: 6),
+                                TextFormField(
+                                  controller: _storageLocationController,
+                                  decoration: const InputDecoration(
+                                    hintText: 'e.g. Feed Silo 1 / Cold Storage',
+                                    isDense: true,
+                                  ),
+                                  validator: (val) =>
+                                      (val == null || val.trim().isEmpty) ? 'Enter location' : null,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 18),
+
+                      // Row 5: Purchase Price & Selling Price
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Purchase Price (₹) *', style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700)),
+                                const SizedBox(height: 6),
+                                TextFormField(
+                                  controller: _purchasePriceController,
+                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                  decoration: const InputDecoration(
+                                    hintText: '₹ 0.00',
+                                    isDense: true,
+                                  ),
+                                  validator: (val) {
+                                    if (val == null || val.trim().isEmpty) return 'Enter price';
+                                    final p = double.tryParse(val.trim());
+                                    if (p == null || p < 0) return 'Invalid price';
+                                    return null;
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Selling Price (₹) — Optional', style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700)),
+                                const SizedBox(height: 6),
+                                TextFormField(
+                                  controller: _sellingPriceController,
+                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                  decoration: const InputDecoration(
+                                    hintText: '₹ 0.00',
+                                    isDense: true,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 18),
+
+                      // Row 6: Purchase Date & Expiry Date
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Purchase Date *', style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700)),
+                                const SizedBox(height: 6),
+                                InkWell(
+                                  onTap: () async {
+                                    final picked = await showDatePicker(
+                                      context: context,
+                                      initialDate: _purchaseDate,
+                                      firstDate: DateTime(2020),
+                                      lastDate: DateTime.now(),
+                                    );
+                                    if (picked != null) setState(() => _purchaseDate = picked);
+                                  },
+                                  child: Container(
+                                    height: 44,
+                                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.surface,
+                                      borderRadius: BorderRadius.circular(AppDesign.radiusMd),
+                                      border: Border.all(color: AppColors.border),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(_dateFormat.format(_purchaseDate), style: const TextStyle(fontSize: 13)),
+                                        const Icon(Icons.calendar_today_outlined, size: 16, color: AppColors.slate500),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Expiry Date — Optional', style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700)),
+                                const SizedBox(height: 6),
+                                InkWell(
+                                  onTap: () async {
+                                    final picked = await showDatePicker(
+                                      context: context,
+                                      initialDate: _expiryDate ?? DateTime.now().add(const Duration(days: 180)),
+                                      firstDate: DateTime.now().subtract(const Duration(days: 30)),
+                                      lastDate: DateTime.now().add(const Duration(days: 3650)),
+                                    );
+                                    if (picked != null) setState(() => _expiryDate = picked);
+                                  },
+                                  child: Container(
+                                    height: 44,
+                                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.surface,
+                                      borderRadius: BorderRadius.circular(AppDesign.radiusMd),
+                                      border: Border.all(color: AppColors.border),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          _expiryDate != null ? _dateFormat.format(_expiryDate!) : 'No Expiry Set',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: _expiryDate != null ? AppColors.textPrimary : AppColors.textHint,
+                                          ),
+                                        ),
+                                        if (_expiryDate != null)
+                                          GestureDetector(
+                                            onTap: () => setState(() => _expiryDate = null),
+                                            child: const Icon(Icons.clear, size: 16, color: AppColors.slate500),
+                                          )
+                                        else
+                                          const Icon(Icons.event_busy_outlined, size: 16, color: AppColors.slate500),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 18),
+
+                      // Row 7: Batch Number & Notes
+                      Text('Batch / Lot Number', style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 6),
+                      TextFormField(
+                        controller: _batchNumberController,
+                        decoration: const InputDecoration(
+                          hintText: 'e.g. BATCH-2026-09-A',
+                          isDense: true,
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+
+                      Text('Notes / Storage Remarks', style: AppTypography.labelMedium.copyWith(fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 6),
+                      TextFormField(
+                        controller: _notesController,
+                        maxLines: 3,
+                        decoration: const InputDecoration(
+                          hintText: 'Add storage conditions, dosage guidance, or supplier contact notes...',
+                        ),
+                      ),
+                      const SizedBox(height: 28),
+
+                      // Actions
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          AppButton(
+                            label: 'Cancel',
+                            variant: AppButtonVariant.outlined,
+                            size: AppButtonSize.medium,
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                          const SizedBox(width: 12),
+                          AppButton(
+                            label: isEdit ? 'Update Stock Item' : 'Save Item to Inventory',
+                            icon: Icons.check_circle_outline_rounded,
+                            size: AppButtonSize.medium,
+                            isLoading: _isSaving,
+                            onPressed: _saveItem,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 32),
+        ],
       ),
     );
   }
@@ -490,7 +620,7 @@ class _InventoryItemFormScreenState extends ConsumerState<InventoryItemFormScree
                   ? 'Inventory item added successfully!'
                   : 'Inventory item updated successfully!',
             ),
-            backgroundColor: AppColors.primary,
+            backgroundColor: AppColors.healthy,
           ),
         );
       }
@@ -500,7 +630,7 @@ class _InventoryItemFormScreenState extends ConsumerState<InventoryItemFormScree
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error saving item: $e'),
-            backgroundColor: AppColors.danger,
+            backgroundColor: AppColors.critical,
           ),
         );
       }

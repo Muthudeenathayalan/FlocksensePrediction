@@ -2,6 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:flock_sense/core/theme/app_colors.dart';
+import 'package:flock_sense/core/theme/app_design.dart';
+import 'package:flock_sense/core/theme/app_typography.dart';
+import 'package:flock_sense/core/widgets/app_button.dart';
+import 'package:flock_sense/core/widgets/app_card.dart';
+import 'package:flock_sense/core/widgets/page_container.dart';
+import 'package:flock_sense/core/widgets/web_page_header.dart';
 import 'package:flock_sense/features/inventory/domain/inventory_item_model.dart';
 import 'package:flock_sense/features/inventory/presentation/providers/inventory_providers.dart';
 import 'package:flock_sense/features/inventory/presentation/screens/inventory_item_form_screen.dart';
@@ -18,37 +24,51 @@ class InventoryItemDetailScreen extends ConsumerWidget {
     final currencyFormat = NumberFormat.currency(symbol: '₹', decimalDigits: 2, locale: 'en_IN');
     final dateFormat = DateFormat('MMM dd, yyyy');
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text(item.itemName),
-        backgroundColor: AppColors.primaryDark,
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit_outlined),
-            tooltip: 'Edit Item',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => InventoryItemFormScreen(existingItem: item),
-                ),
-              );
-            },
+    return PageContainer(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          WebPageHeader(
+            title: item.itemName,
+            subtitle: '${item.category} Stock Item • Stored at ${item.storageLocation}',
+            actions: [
+              AppButton(
+                label: 'Back',
+                icon: Icons.arrow_back_rounded,
+                variant: AppButtonVariant.outlined,
+                size: AppButtonSize.small,
+                onPressed: () => Navigator.pop(context),
+              ),
+              const SizedBox(width: 8),
+              AppButton(
+                label: 'Edit Item',
+                icon: Icons.edit_outlined,
+                size: AppButtonSize.small,
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => InventoryItemFormScreen(existingItem: item),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(width: 8),
+              AppButton(
+                label: 'Delete',
+                icon: Icons.delete_outline,
+                variant: AppButtonVariant.danger,
+                size: AppButtonSize.small,
+                onPressed: () => _confirmDelete(context, ref),
+              ),
+            ],
           ),
-          IconButton(
-            icon: const Icon(Icons.delete_outline, color: Colors.white),
-            tooltip: 'Delete Item',
-            onPressed: () => _confirmDelete(context, ref),
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 860),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
             // Item Header Overview Card
             Container(
               padding: const EdgeInsets.all(16),
@@ -225,7 +245,11 @@ class InventoryItemDetailScreen extends ConsumerWidget {
           ],
         ),
       ),
-    );
+    ),
+    const SizedBox(height: 32),
+  ],
+),
+);
   }
 
   Widget _infoRow(String label, String value) {
