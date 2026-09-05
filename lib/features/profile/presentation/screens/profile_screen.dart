@@ -3,39 +3,40 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flock_sense/config/routes/app_routes.dart';
 import 'package:flock_sense/core/theme/app_colors.dart';
-import 'package:flock_sense/features/profile/presentation/screens/edit_profile_screen.dart';
-import 'package:flock_sense/features/profile/presentation/screens/notification_settings_screen.dart';
+import 'package:flock_sense/core/theme/app_design.dart';
+import 'package:flock_sense/core/theme/app_typography.dart';
+import 'package:flock_sense/core/widgets/app_button.dart';
+import 'package:flock_sense/core/widgets/app_card.dart';
+import 'package:flock_sense/core/widgets/page_container.dart';
+import 'package:flock_sense/core/widgets/web_page_header.dart';
+import 'package:flock_sense/features/auth/presentation/providers/auth_providers.dart';
+import 'package:flock_sense/features/farms/presentation/providers/selected_farm_provider.dart';
 import 'package:flock_sense/features/profile/presentation/screens/app_settings_screen.dart';
+import 'package:flock_sense/features/profile/presentation/screens/edit_profile_screen.dart';
+import 'package:flock_sense/features/profile/presentation/screens/feedback_screen.dart';
+import 'package:flock_sense/features/profile/presentation/screens/notification_settings_screen.dart';
+import 'package:flock_sense/features/profile/presentation/screens/privacy_security_screen.dart';
 import 'package:flock_sense/features/support/presentation/screens/help_support_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
-  // FIX — LOGOUT: the previous version called userStateService.signOut()
-  // then Navigator.pushReplacementNamed(AppRoutes.initial). If signOut()
-  // threw (e.g. no provider registered, or a race with the auth stream),
-  // the error surfaced as "An error occurred" on screen. Now we call
-  // FirebaseAuth directly (the ground-truth source) and navigate by
-  // removing ALL routes so there is no back-stack to return to.
   Future<void> _logout(BuildContext ctx) async {
     final ok = await showDialog<bool>(
       context: ctx,
       builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          'Sign out?',
-          style: TextStyle(fontWeight: FontWeight.w700),
-        ),
-        content: const Text('You will be returned to the login screen.'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDesign.radiusLg)),
+        title: const Text('Sign out of FlockSense?', style: TextStyle(fontWeight: FontWeight.w700)),
+        content: const Text('You will be logged out of your session and returned to the sign-in screen.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: const Text('Cancel'),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Sign out'),
+            child: const Text('Sign Out'),
           ),
         ],
       ),
@@ -45,7 +46,6 @@ class ProfileScreen extends ConsumerWidget {
     try {
       await FirebaseAuth.instance.signOut();
       if (ctx.mounted) {
-        // Remove every route and land on AuthWrapper which will show LoginScreen.
         Navigator.pushNamedAndRemoveUntil(ctx, AppRoutes.initial, (_) => false);
       }
     } catch (e) {
@@ -53,7 +53,7 @@ class ProfileScreen extends ConsumerWidget {
         ScaffoldMessenger.of(ctx).showSnackBar(
           SnackBar(
             content: Text('Sign out failed: $e'),
-            backgroundColor: Colors.red.shade700,
+            backgroundColor: AppColors.danger,
           ),
         );
       }
@@ -63,332 +63,321 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = FirebaseAuth.instance.currentUser;
-    final name = user?.displayName?.isNotEmpty == true
-        ? user!.displayName!
-        : 'Farmer';
-    final email = user?.email ?? '';
-    final initial = name.isNotEmpty ? name[0].toUpperCase() : 'F';
+    final authProfile = ref.watch(currentUserProfileProvider).value;
+    final activeFarm = ref.watch(activeFarmContextProvider);
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: CustomScrollView(
-        slivers: [
-          // Premium profile header
-          SliverAppBar(
-            expandedHeight: 220,
-            pinned: true,
-            backgroundColor: AppColors.primary,
-            foregroundColor: Colors.white,
-            title: const Text(
-              'Profile',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
+    final name = (authProfile?.name.isNotEmpty ?? false)
+        ? authProfile!.name
+        : (user?.displayName?.isNotEmpty == true ? user!.displayName! : 'User Administrator');
+    final email = user?.email ?? authProfile?.email ?? 'demo@flocksense.in';
+    final role = authProfile?.role.label ?? 'Commercial Poultry Farmer';
+    final phone = (authProfile?.phoneNumber?.isNotEmpty ?? false)
+        ? authProfile!.phoneNumber!
+        : (user?.phoneNumber ?? '+91 98450 12345');
+    final initial = name.isNotEmpty ? name[0].toUpperCase() : 'U';
+
+    return PageContainer(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 1. Web Header
+          WebPageHeader(
+            title: 'User Profile & Account',
+            subtitle:
+                'Manage user identity credentials, role permissions, active farm association, and system preferences.',
+            actions: [
+              AppButton(
+                label: 'Sign Out',
+                icon: Icons.logout_rounded,
+                variant: AppButtonVariant.danger,
+                size: AppButtonSize.small,
+                onPressed: () => _logout(context),
               ),
-            ),
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
+            ],
+          ),
+
+          // 2. Responsive Multi-Column Layout
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isDesktop = constraints.maxWidth >= 900;
+              return isDesktop
+                  ? Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Left Identity Card
+                        SizedBox(
+                          width: 360,
+                          child: _buildIdentityCard(context, name, email, role, phone, initial, activeFarm),
+                        ),
+                        const SizedBox(width: 24),
+                        // Right Settings & Controls
+                        Expanded(
+                          child: _buildSettingsSections(context),
+                        ),
+                      ],
+                    )
+                  : Column(
+                      children: [
+                        _buildIdentityCard(context, name, email, role, phone, initial, activeFarm),
+                        const SizedBox(height: 24),
+                        _buildSettingsSections(context),
+                      ],
+                    );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildIdentityCard(
+    BuildContext context,
+    String name,
+    String email,
+    String role,
+    String phone,
+    String initial,
+    ActiveFarmContext activeFarm,
+  ) {
+    return Column(
+      children: [
+        AppCard(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            children: [
+              // Avatar
+              Container(
+                width: 80,
+                height: 80,
                 decoration: const BoxDecoration(
                   gradient: AppColors.primaryGradient,
+                  shape: BoxShape.circle,
+                  boxShadow: AppDesign.subtleShadow,
                 ),
-                child: SafeArea(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const SizedBox(height: 40),
-                      CircleAvatar(
-                        radius: 40,
-                        backgroundColor: Colors.white.withOpacity(0.25),
-                        child: Text(
-                          initial,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 34,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        name,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        email,
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.8),
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
+                child: Center(
+                  child: Text(
+                    initial,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 32,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
               ),
-            ),
-          ),
+              const SizedBox(height: 16),
+              Text(
+                name,
+                textAlign: TextAlign.center,
+                style: AppTypography.cardTitle.copyWith(fontSize: 18),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                email,
+                style: const TextStyle(fontSize: 13, color: AppColors.slate500),
+              ),
+              const SizedBox(height: 12),
+              AppDesign.statusChip(
+                role.toUpperCase(),
+                AppColors.primaryLight,
+                textColor: AppColors.primary,
+                icon: Icons.verified_user_rounded,
+              ),
 
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                // Account section
-                _sectionLabel('Account'),
-                const SizedBox(height: 8),
-                _menuCard([
-                  _menuTile(
-                    context,
-                    Icons.person_outline,
-                    'Edit profile',
-                    'Update your name and details',
-                    Colors.blue,
-                    () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const EditProfileScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  _divider(),
-                  _menuTile(
-                    context,
-                    Icons.lock_outline,
-                    'Change password',
-                    'Update your login password',
-                    Colors.orange,
-                    () {
-                      showDialog(
-                        context: context,
-                        builder: (_) => AlertDialog(
-                          title: const Text('Change password'),
-                          content: const Text('Password change coming soon'),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context),
-                              child: const Text('OK'),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                  _divider(),
-                  _menuTile(
-                    context,
-                    Icons.notifications_outlined,
-                    'Notifications',
-                    'Manage alert preferences',
-                    Colors.purple,
-                    () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const NotificationSettingsScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                ]),
+              const SizedBox(height: 20),
+              const Divider(height: 1, color: AppColors.divider),
+              const SizedBox(height: 16),
 
-                const SizedBox(height: 20),
-                _sectionLabel('App'),
-                const SizedBox(height: 8),
-                _menuCard([
-                  _menuTile(
-                    context,
-                    Icons.language_outlined,
-                    'Language',
-                    'English (default)',
-                    Colors.teal,
-                    () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const AppSettingsScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  _divider(),
-                  _menuTile(
-                    context,
-                    Icons.help_outline,
-                    'Help & FAQ',
-                    'Get answers and support',
-                    Colors.indigo,
-                    () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const HelpSupportScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  _divider(),
-                  _menuTile(
-                    context,
-                    Icons.info_outline,
-                    'About FlockSense',
-                    'Version 1.0.0',
-                    Colors.grey,
-                    () {
-                      showAboutDialog(
-                        context: context,
-                        applicationName: 'FlockSense',
-                        applicationVersion: '1.0.0',
-                        children: [
-                          const Text(
-                            'FlockSense helps you run small commercial poultry farms efficiently.',
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ]),
+              // Contact & Facility Rows
+              _infoTile(Icons.phone_rounded, 'Mobile Contact', phone),
+              const SizedBox(height: 12),
+              _infoTile(
+                Icons.home_work_rounded,
+                'Active Facility',
+                activeFarm.farmName.isNotEmpty ? activeFarm.farmName : 'Green Valley Broiler Farm',
+              ),
+              const SizedBox(height: 12),
+              _infoTile(
+                Icons.location_on_rounded,
+                'Assigned Region',
+                'Coimbatore District, TN',
+              ),
 
-                const SizedBox(height: 28),
-                // Logout button
-                Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: Colors.red.shade200),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: AppColors.shadow,
-                        blurRadius: 8,
-                        offset: Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: ListTile(
-                    onTap: () => _logout(context),
-                    leading: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Colors.red.shade50,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(
-                        Icons.logout_rounded,
-                        color: Colors.red.shade600,
-                        size: 20,
-                      ),
-                    ),
-                    title: Text(
-                      'Sign out',
-                      style: TextStyle(
-                        color: Colors.red.shade700,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 15,
-                      ),
-                    ),
-                    subtitle: Text(
-                      'You can sign back in at any time',
-                      style: TextStyle(
-                        color: Colors.red.shade400,
-                        fontSize: 12,
-                      ),
-                    ),
-                    trailing: Icon(
-                      Icons.chevron_right,
-                      color: Colors.red.shade300,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
-                    ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: AppButton(
+                  label: 'Edit Profile Information',
+                  icon: Icons.edit_rounded,
+                  variant: AppButtonVariant.outlined,
+                  size: AppButtonSize.small,
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const EditProfileScreen()),
                   ),
                 ),
-              ]),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _infoTile(IconData icon, String label, String value) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: AppColors.slate400),
+        const SizedBox(width: 10),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: const TextStyle(fontSize: 11, color: AppColors.slate400)),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.slate800,
+              ),
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
+      ],
     );
   }
 
-  Widget _sectionLabel(String label) => Padding(
-    padding: const EdgeInsets.only(left: 4, bottom: 2),
-    child: Text(
-      label.toUpperCase(),
-      style: const TextStyle(
-        fontSize: 11,
-        fontWeight: FontWeight.w700,
-        color: AppColors.textHint,
-        letterSpacing: 1.2,
-      ),
-    ),
-  );
-
-  Widget _divider() =>
-      const Divider(height: 1, indent: 62, color: AppColors.divider);
-
-  Widget _menuCard(List<Widget> children) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.border, width: 0.8),
-        boxShadow: const [
-          BoxShadow(
-            color: AppColors.shadow,
-            blurRadius: 8,
-            offset: Offset(0, 3),
+  Widget _buildSettingsSections(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // App Preferences
+        AppDesign.sectionTitle('Application & Notifications'),
+        AppCard(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Column(
+            children: [
+              _settingRow(
+                context,
+                Icons.tune_rounded,
+                AppColors.primary,
+                'App & Display Settings',
+                'Dark mode theme, language, and metric measurement units',
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AppSettingsScreen()),
+                ),
+              ),
+              const Divider(height: 1, color: AppColors.divider),
+              _settingRow(
+                context,
+                Icons.notifications_active_rounded,
+                AppColors.warning,
+                'Notification Preferences',
+                'Critical disease alerts, daily mortality spikes, and vaccination reminders',
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const NotificationSettingsScreen()),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Column(children: children),
+        ),
+
+        const SizedBox(height: 24),
+
+        // Security & Account
+        AppDesign.sectionTitle('Security & Access Governance'),
+        AppCard(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Column(
+            children: [
+              _settingRow(
+                context,
+                Icons.shield_outlined,
+                AppColors.indigo,
+                'Privacy & Security Credentials',
+                'Two-factor authentication, active login sessions, and password management',
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const PrivacySecurityScreen()),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 24),
+
+        // Help & Feedback
+        AppDesign.sectionTitle('Support & Assistance'),
+        AppCard(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Column(
+            children: [
+              _settingRow(
+                context,
+                Icons.help_outline_rounded,
+                AppColors.primary,
+                'Knowledge Base & Support',
+                'User tutorials, disease diagnostic protocols, and emergency helpline',
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const HelpSupportScreen()),
+                ),
+              ),
+              const Divider(height: 1, color: AppColors.divider),
+              _settingRow(
+                context,
+                Icons.chat_bubble_outline_rounded,
+                AppColors.indigo,
+                'Send App Feedback',
+                'Report bugs or suggest biometric prediction feature improvements',
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const FeedbackScreen()),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _menuTile(
-    BuildContext ctx,
+  Widget _settingRow(
+    BuildContext context,
     IconData icon,
+    Color iconColor,
     String title,
     String subtitle,
-    Color color,
     VoidCallback onTap,
   ) {
     return ListTile(
-      onTap: () {
-        onTap();
-      },
+      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       leading: Container(
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: color.withOpacity(0.12),
-          borderRadius: BorderRadius.circular(10),
+          color: iconColor.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(AppDesign.radiusMd),
         ),
-        child: Icon(icon, color: color, size: 20),
+        child: Icon(icon, color: iconColor, size: 20),
       ),
       title: Text(
         title,
         style: const TextStyle(
-          fontWeight: FontWeight.w600,
           fontSize: 14,
-          color: AppColors.textPrimary,
+          fontWeight: FontWeight.w700,
+          color: AppColors.slate900,
         ),
       ),
       subtitle: Text(
         subtitle,
-        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+        style: const TextStyle(fontSize: 12, color: AppColors.slate500),
       ),
-      trailing: Icon(
-        Icons.chevron_right,
-        color: Colors.grey.shade400,
-        size: 20,
-      ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.slate400, size: 20),
+      onTap: onTap,
     );
   }
 }

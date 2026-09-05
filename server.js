@@ -80,10 +80,22 @@ const server = http.createServer((req, res) => {
   });
 });
 
-server.listen(PORT, '0.0.0.0', () => {
+let currentPort = parseInt(PORT, 10);
+
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    currentPort++;
+    console.warn(`[Port Conflict] Port ${currentPort - 1} is in use. Falling back to port ${currentPort}...`);
+    server.listen(currentPort, '0.0.0.0');
+  } else {
+    console.error('Server error:', err);
+  }
+});
+
+server.listen(currentPort, '0.0.0.0', () => {
   console.log(`====================================================`);
   console.log(` FlockSense Live Server is running!`);
-  console.log(` Local:   http://localhost:${PORT}`);
-  console.log(` Network: http://127.0.0.1:${PORT}`);
+  console.log(` Local:   http://localhost:${currentPort}`);
+  console.log(` Network: http://127.0.0.1:${currentPort}`);
   console.log(`====================================================`);
 });

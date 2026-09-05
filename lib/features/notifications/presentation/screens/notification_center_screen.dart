@@ -38,17 +38,23 @@ class _NotificationCenterScreenState
 
   @override
   Widget build(BuildContext context) {
+    final canPop = Navigator.of(context).canPop();
+
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Notifications & Alerts', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
-        elevation: 0,
-        backgroundColor: AppColors.surface,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, size: 20),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
+      appBar: canPop
+          ? AppBar(
+              title: const Text('Notification Center',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+              elevation: 0,
+              backgroundColor: AppColors.surface,
+              foregroundColor: AppColors.textPrimary,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back_rounded, size: 20),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            )
+          : null,
       body: PageContainer(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
