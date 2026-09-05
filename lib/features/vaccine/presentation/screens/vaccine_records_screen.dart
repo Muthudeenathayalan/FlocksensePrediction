@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flock_sense/core/theme/app_colors.dart';
 import 'package:flock_sense/core/theme/app_design.dart';
+import 'package:flock_sense/core/theme/app_typography.dart';
 import 'package:flock_sense/core/widgets/app_button.dart';
+import 'package:flock_sense/core/widgets/app_card.dart';
+import 'package:flock_sense/core/widgets/metric_card.dart';
 import 'package:flock_sense/core/widgets/page_container.dart';
 import 'package:flock_sense/core/widgets/responsive_data_table.dart';
 import 'package:flock_sense/core/widgets/status_badge.dart';
@@ -43,22 +46,6 @@ class _VaccineRecordsScreenState extends State<VaccineRecordsScreen>
             title: 'Immunization & Vaccination Management',
             subtitle: 'Schedule and verify viral and bacterial immunizations across all registered flocks.',
             actions: [
-              Container(
-                decoration: BoxDecoration(
-                  color: AppColors.slate100,
-                  borderRadius: BorderRadius.circular(AppDesign.radiusMd),
-                ),
-                child: TabBar(
-                  controller: _tabController,
-                  isScrollable: true,
-                  tabs: const [
-                    Tab(text: 'Upcoming Doses'),
-                    Tab(text: 'Completed Immunizations'),
-                    Tab(text: 'Overdue Doses'),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
               AppButton(
                 label: 'Schedule Vaccination',
                 icon: Icons.add_rounded,
@@ -79,18 +66,85 @@ class _VaccineRecordsScreenState extends State<VaccineRecordsScreen>
             ],
           ),
 
-          // 2. Tab Contents
-          SizedBox(
-            height: 600,
-            child: TabBarView(
+          // 2. 3 Clean Top KPI Summary Cards
+          Row(
+            children: const [
+              Expanded(
+                child: MetricCard(
+                  title: 'Total Doses Administered',
+                  value: '14,910 Doses',
+                  subtitle: '100% on-schedule coverage',
+                  icon: Icons.verified_rounded,
+                  accentColor: AppColors.healthy,
+                ),
+              ),
+              SizedBox(width: 16),
+              Expanded(
+                child: MetricCard(
+                  title: 'Upcoming Doses (7D)',
+                  value: '2 Flocks Due',
+                  subtitle: 'Next: ND LaSota in 24h',
+                  icon: Icons.schedule_rounded,
+                  accentColor: AppColors.info,
+                ),
+              ),
+              SizedBox(width: 16),
+              Expanded(
+                child: MetricCard(
+                  title: 'Overdue Doses',
+                  value: '0 Overdue',
+                  subtitle: 'Flock immunity intact',
+                  icon: Icons.shield_outlined,
+                  accentColor: AppColors.primary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // 3. Segmented Tab Selector
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(AppDesign.radiusMd),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: TabBar(
               controller: _tabController,
-              children: [
-                _buildUpcomingTable(),
-                _buildCompletedTable(),
-                _buildOverdueTable(),
+              isScrollable: true,
+              indicator: BoxDecoration(
+                color: AppColors.primaryLight,
+                borderRadius: BorderRadius.circular(AppDesign.radiusSm),
+              ),
+              labelColor: AppColors.primaryDark,
+              unselectedLabelColor: AppColors.slate600,
+              labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+              unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+              tabs: const [
+                Tab(text: 'Upcoming Doses (2)'),
+                Tab(text: 'Completed Immunizations (3)'),
+                Tab(text: 'Overdue Doses (0)'),
               ],
             ),
           ),
+          const SizedBox(height: 16),
+
+          // 4. Tab Contents in Clean AppCard
+          AppCard(
+            child: SizedBox(
+              height: 480,
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildUpcomingTable(),
+                  _buildCompletedTable(),
+                  _buildOverdueTable(),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 32),
         ],
       ),
     );
@@ -215,3 +269,4 @@ class _VaccineRecordsScreenState extends State<VaccineRecordsScreen>
     );
   }
 }
+

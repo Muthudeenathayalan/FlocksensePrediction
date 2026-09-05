@@ -1,5 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:flock_sense/core/theme/app_colors.dart';
+import 'package:flock_sense/core/theme/app_design.dart';
+import 'package:flock_sense/core/theme/app_typography.dart';
+import 'package:flock_sense/core/widgets/app_button.dart';
+import 'package:flock_sense/core/widgets/app_card.dart';
+import 'package:flock_sense/core/widgets/page_container.dart';
+import 'package:flock_sense/core/widgets/web_page_header.dart';
 import 'package:flock_sense/features/weight/data/weight_record_service.dart';
 import 'package:flock_sense/features/weight/domain/weight_record_model.dart';
 
@@ -28,6 +35,8 @@ class _WeightRecordFormScreenState extends State<WeightRecordFormScreen> {
   bool _saving = false;
   final _formKey = GlobalKey<FormState>();
 
+  bool get _isEdit => widget.existingRecord != null;
+
   @override
   void initState() {
     super.initState();
@@ -35,7 +44,7 @@ class _WeightRecordFormScreenState extends State<WeightRecordFormScreen> {
     _recordDate = record?.recordDate ?? DateTime.now();
     _selectedUnit = record?.unit ?? 'grams';
     _weightController = TextEditingController(
-      text: record?.averageWeight.toString() ?? '',
+      text: record != null ? record.averageWeight.toString() : '',
     );
     _sampleCountController = TextEditingController(
       text: record?.sampleCount?.toString() ?? '',
@@ -88,7 +97,10 @@ class _WeightRecordFormScreenState extends State<WeightRecordFormScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Unable to save weight record: $e')),
+        SnackBar(
+          content: Text('Unable to save weight record: $e'),
+          backgroundColor: AppColors.danger,
+        ),
       );
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -100,178 +112,228 @@ class _WeightRecordFormScreenState extends State<WeightRecordFormScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        title: Text(_isEdit ? 'Edit Weight Sample' : 'Log Weight Sample',
+            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
         elevation: 0,
-        scrolledUnderElevation: 0,
-        title: Text(
-          widget.existingRecord == null ? 'Add Weight' : 'Edit Weight',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
+        backgroundColor: AppColors.surface,
+        foregroundColor: AppColors.textPrimary,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, size: 20),
+          onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-      body: SafeArea(
+      body: PageContainer(
+        maxWidth: AppDesign.maxFormWidth,
         child: Form(
           key: _formKey,
-          child: ListView(
-            padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Record date',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
-                ),
+              // 1. Web Page Header
+              WebPageHeader(
+                title: _isEdit ? 'Edit Weight Sampling' : 'Record Flock Weight Sampling',
+                subtitle:
+                    'Log sample bird weights to assess Average Daily Gain (ADG), uniformity index, and growth standard variance.',
+                breadcrumb: 'Batches / Weight Records / ${_isEdit ? "Edit" : "New Sample"}',
               ),
-              const SizedBox(height: 8),
-              GestureDetector(
-                onTap: _pickDate,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: AppColors.border),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        '${_recordDate.day}/${_recordDate.month}/${_recordDate.year}',
-                        style: const TextStyle(fontSize: 16),
-                      ),
-                      const Icon(Icons.calendar_today, size: 20),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Average weight',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _weightController,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                decoration: InputDecoration(
-                  hintText: 'e.g., 1250.5',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Weight is required';
-                  }
-                  final weight = double.tryParse(value.trim());
-                  if (weight == null || weight <= 0) {
-                    return 'Weight must be greater than zero';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                'Unit',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              SegmentedButton<String>(
-                segments: const [
-                  ButtonSegment(label: Text('Grams'), value: 'grams'),
-                  ButtonSegment(label: Text('Kilograms'), value: 'kilograms'),
-                ],
-                selected: {_selectedUnit},
-                onSelectionChanged: (value) {
-                  setState(() => _selectedUnit = value.first);
-                },
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Sample count (optional)',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _sampleCountController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  hintText: 'e.g., 50',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                validator: (value) {
-                  if (value != null && value.trim().isNotEmpty) {
-                    final count = int.tryParse(value.trim());
-                    if (count == null || count < 0) {
-                      return 'Sample count must be a non-negative number';
-                    }
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Notes (optional)',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _notesController,
-                maxLines: 3,
-                decoration: InputDecoration(
-                  hintText: 'Any additional notes...',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              FilledButton(
-                onPressed: _saving ? null : _save,
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-                child: _saving
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation(Colors.white),
+
+              // 2. Main Form Card
+              AppCard(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AppDesign.sectionTitle('Sampling Parameters'),
+                    const SizedBox(height: 12),
+
+                    // Date Picker Input
+                    InkWell(
+                      onTap: _pickDate,
+                      borderRadius: BorderRadius.circular(AppDesign.radiusMd),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(AppDesign.radiusMd),
+                          border: Border.all(color: AppColors.border),
                         ),
-                      )
-                    : const Text('Save Record'),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.calendar_today_rounded,
+                                    size: 18, color: AppColors.slate400),
+                                const SizedBox(width: 12),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text('Sampling Date',
+                                        style: TextStyle(fontSize: 11, color: AppColors.slate500)),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      DateFormat('dd MMMM yyyy').format(_recordDate),
+                                      style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.slate800),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            const Icon(Icons.edit_calendar_rounded,
+                                color: AppColors.primary, size: 20),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Weight Input and Unit Toggle
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: _textField(
+                            _weightController,
+                            'Average Weight per Bird',
+                            icon: Icons.fitness_center_rounded,
+                            required: true,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Weight is required';
+                              }
+                              final weight = double.tryParse(value.trim());
+                              if (weight == null || weight <= 0) {
+                                return 'Enter a valid weight > 0';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          flex: 1,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                height: 48,
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                decoration: BoxDecoration(
+                                  color: AppColors.slate100,
+                                  borderRadius: BorderRadius.circular(AppDesign.radiusMd),
+                                  border: Border.all(color: AppColors.border),
+                                ),
+                                child: DropdownButtonHideUnderline(
+                                  child: DropdownButton<String>(
+                                    value: _selectedUnit,
+                                    isExpanded: true,
+                                    items: const [
+                                      DropdownMenuItem(value: 'grams', child: Text('Grams (g)')),
+                                      DropdownMenuItem(value: 'kilograms', child: Text('Kilograms (kg)')),
+                                    ],
+                                    onChanged: (val) {
+                                      if (val != null) setState(() => _selectedUnit = val);
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    _textField(
+                      _sampleCountController,
+                      'Number of Sampled Birds (e.g. 50 birds)',
+                      icon: Icons.pets_outlined,
+                      keyboardType: TextInputType.number,
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    _textField(
+                      _notesController,
+                      'Sampling Observations / Breed Standard Notes',
+                      icon: Icons.notes_rounded,
+                      maxLines: 3,
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // 3. Actions Row
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  AppButton(
+                    label: 'Cancel',
+                    variant: AppButtonVariant.outlined,
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                  const SizedBox(width: 12),
+                  AppButton(
+                    label: _isEdit ? 'Update Sample' : 'Save Sample Weight',
+                    icon: Icons.check_circle_outline_rounded,
+                    isLoading: _saving,
+                    onPressed: _saving ? null : _save,
+                  ),
+                ],
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _textField(
+    TextEditingController c,
+    String label, {
+    bool required = false,
+    TextInputType? keyboardType,
+    int maxLines = 1,
+    IconData? icon,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: c,
+      keyboardType: keyboardType,
+      maxLines: maxLines,
+      style: const TextStyle(fontSize: 14, color: AppColors.slate900),
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: icon != null ? Icon(icon, size: 18, color: AppColors.slate400) : null,
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppDesign.radiusMd),
+          borderSide: const BorderSide(color: AppColors.border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppDesign.radiusMd),
+          borderSide: const BorderSide(color: AppColors.border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppDesign.radiusMd),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+        ),
+      ),
+      validator: validator ??
+          (required
+              ? (v) => (v?.trim().isEmpty ?? true) ? 'This field is required' : null
+              : null),
     );
   }
 }
