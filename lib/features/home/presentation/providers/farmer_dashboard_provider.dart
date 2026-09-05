@@ -65,7 +65,10 @@ class FarmerDashboardState {
 
 /// Farm-scoped stream of health cases strictly for the current farmer / owned farms
 final farmerHealthCasesStreamProvider = StreamProvider.autoDispose<List<HealthCaseModel>>((ref) {
-  final user = FirebaseAuth.instance.currentUser;
+  User? user;
+  try {
+    user = FirebaseAuth.instance.currentUser;
+  } catch (_) {}
   final farmsAsync = ref.watch(farmListProvider);
   final activeFarm = ref.watch(activeFarmContextProvider);
 
@@ -73,13 +76,14 @@ final farmerHealthCasesStreamProvider = StreamProvider.autoDispose<List<HealthCa
     return Stream.value(<HealthCaseModel>[]);
   }
 
-  final ownedFarmIds = farmsAsync.value?.map((f) => f.id).toSet() ?? {activeFarm.farmId};
+  final ownedFarmIds = farmsAsync.valueOrNull?.map((f) => f.id).toSet() ?? {activeFarm.farmId};
   ownedFarmIds.add(activeFarm.farmId);
 
-  return FirebaseFirestore.instance
-      .collection(FirestoreCollections.healthCases)
-      .snapshots()
-      .map((snap) {
+  try {
+    return FirebaseFirestore.instance
+        .collection(FirestoreCollections.healthCases)
+        .snapshots()
+        .map((snap) {
         final cases = snap.docs.map((d) {
           final data = d.data();
           return HealthCaseModel.fromJson({
@@ -88,7 +92,7 @@ final farmerHealthCasesStreamProvider = StreamProvider.autoDispose<List<HealthCa
           });
         }).where((c) {
           // Strict Scoping: Must belong to current user or one of their owned farms
-          final isOwner = c.farmerId == user.uid;
+          final isOwner = user != null && c.farmerId == user.uid;
           final isOwnedFarm = ownedFarmIds.contains(c.farmId);
           return isOwner || isOwnedFarm;
         }).toList();
@@ -98,6 +102,9 @@ final farmerHealthCasesStreamProvider = StreamProvider.autoDispose<List<HealthCa
       .handleError((e) {
         return <HealthCaseModel>[];
       });
+  } catch (_) {
+    return Stream.value(<HealthCaseModel>[]);
+  }
 });
 
 /// Dedicated Farmer Dashboard Provider
@@ -109,15 +116,15 @@ final farmerDashboardProvider = Provider.autoDispose<FarmerDashboardState>((ref)
   final activeFarm = ref.watch(activeFarmContextProvider);
 
   final isLoading = false;
-  final rawFarms = farmsAsync.value ?? FarmService.inMemoryFarms;
+  final rawFarms = farmsAsync.valueOrNull ?? FarmService.inMemoryFarms;
   final farms = rawFarms.isNotEmpty ? rawFarms : FarmService.inMemoryFarms;
-  final rawBatches = batchesAsync.value ?? BatchService.inMemoryBatches;
+  final rawBatches = batchesAsync.valueOrNull ?? BatchService.inMemoryBatches;
   final allBatches = rawBatches.isNotEmpty ? rawBatches : BatchService.inMemoryBatches;
   final activeBatches = allBatches.where((b) => b.farmId == activeFarm.farmId && b.status == 'active').toList();
   final effectiveBatches = activeBatches.isNotEmpty ? activeBatches : allBatches.where((b) => b.status == 'active').toList();
   
-  final todayMortality = mortalityAsync.value ?? 0;
-  final allCases = healthCasesAsync.value ?? <HealthCaseModel>[];
+  final todayMortality = mortalityAsync.valueOrNull ?? 0;
+  final allCases = healthCasesAsync.valueOrNull ?? <HealthCaseModel>[];
 
   final activeCases = allCases.where((c) => c.status != HealthCaseStatus.closed).toList();
   final criticalAlerts = allCases

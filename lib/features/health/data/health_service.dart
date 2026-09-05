@@ -9,14 +9,26 @@ import 'package:flock_sense/core/services/audit_service.dart';
 
 /// Primary Service for Health Cases & Disease Incidents (SIH26128)
 class HealthService {
-  HealthService._();
+  static FirebaseFirestore? get _firestoreOrNull {
+    try {
+      return FirebaseFirestore.instance;
+    } catch (_) {
+      return null;
+    }
+  }
 
-  static final _firestore = FirebaseFirestore.instance;
-  static final _auth = FirebaseAuth.instance;
+  static FirebaseAuth? get _authOrNull {
+    try {
+      return FirebaseAuth.instance;
+    } catch (_) {
+      return null;
+    }
+  }
+
   static final _auditService = AuditService();
 
-  static CollectionReference<Map<String, dynamic>> get _casesRef =>
-      _firestore.collection('health_cases');
+  static CollectionReference<Map<String, dynamic>>? get _casesRef =>
+      _firestoreOrNull?.collection('health_cases');
 
   /// Generate deterministic incident key for duplicate prevention
   static String generateIncidentKey(String farmId, String flockId, DateTime date) {
@@ -28,8 +40,10 @@ class HealthService {
 
   /// Check if an active incident already exists for this farm/flock/date
   static Future<HealthCaseModel?> findActiveIncident(String incidentKey) async {
+    final ref = _casesRef;
+    if (ref == null) return null;
     try {
-      final snap = await _casesRef
+      final snap = await ref
           .where('incidentKey', isEqualTo: incidentKey)
           .where('status', whereNotIn: [HealthCaseStatus.closed.name, HealthCaseStatus.rejected.name])
           .limit(1)
@@ -49,13 +63,23 @@ class HealthService {
 
   /// Create or idempotently update health case
   static Future<HealthCaseModel> createOrUpdateHealthCase(HealthCaseModel healthCase) async {
-    final user = _auth.currentUser;
+    final user = _authOrNull?.currentUser;
     final incidentKey = healthCase.incidentKey ??
         generateIncidentKey(healthCase.farmId, healthCase.flockId, healthCase.reportedAt);
 
+    final ref = _casesRef;
+    if (ref == null) {
+      return healthCase.copyWith(
+        id: healthCase.id.isNotEmpty ? healthCase.id : 'case_offline_mock',
+        farmerId: healthCase.farmerId ?? user?.uid,
+        incidentKey: incidentKey,
+        updatedAt: DateTime.now(),
+      );
+    }
+
     // 1. Check for existing active incident
     final existing = await findActiveIncident(incidentKey);
-    final docRef = existing != null ? _casesRef.doc(existing.id) : _casesRef.doc();
+    final docRef = existing != null ? ref.doc(existing.id) : ref.doc();
 
     final toSave = healthCase.copyWith(
       id: docRef.id,
@@ -112,7 +136,11 @@ class HealthService {
 
   /// Stream all active health cases (General / Government overview)
   static Stream<List<HealthCaseModel>> streamHealthCases() {
-    return _casesRef
+    final ref = _casesRef;
+    if (ref == null) {
+      return Stream.value(_getSampleHealthCases());
+    }
+    return ref
         .orderBy('reportedAt', descending: true)
         .snapshots()
         .map((snapshot) {
@@ -133,8 +161,13 @@ class HealthService {
 
   /// Get a single health case by ID
   static Future<HealthCaseModel?> getCaseById(String caseId) async {
+    final ref = _casesRef;
+    if (ref == null) {
+      final sample = _getSampleHealthCases().where((c) => c.id == caseId);
+      return sample.isNotEmpty ? sample.first : null;
+    }
     try {
-      final doc = await _casesRef.doc(caseId).get();
+      final doc = await ref.doc(caseId).get();
       if (!doc.exists || doc.data() == null) {
         final sample = _getSampleHealthCases().where((c) => c.id == caseId);
         return sample.isNotEmpty ? sample.first : null;
@@ -152,7 +185,11 @@ class HealthService {
 
   /// Stream health cases for a specific farm
   static Stream<List<HealthCaseModel>> streamCasesForFarm(String farmId) {
-    return _casesRef
+    final ref = _casesRef;
+    if (ref == null) {
+      return Stream.value(_getSampleHealthCases().where((c) => c.farmId == farmId).toList());
+    }
+    return ref
         .where('farmId', isEqualTo: farmId)
         .orderBy('reportedAt', descending: true)
         .snapshots()
@@ -170,7 +207,11 @@ class HealthService {
 
   /// Stream health cases assigned to a veterinarian
   static Stream<List<HealthCaseModel>> streamAssignedCases(String vetId) {
-    return _casesRef
+    final ref = _casesRef;
+    if (ref == null) {
+      return Stream.value(_getSampleHealthCases());
+    }
+    return ref
         .where('assignedVetId', isEqualTo: vetId)
         .orderBy('reportedAt', descending: true)
         .snapshots()
@@ -188,7 +229,13 @@ class HealthService {
 
   /// Stream critical surveillance cases for Government Command Center
   static Stream<List<HealthCaseModel>> streamCriticalCases() {
-    return _casesRef
+    final ref = _casesRef;
+    if (ref == null) {
+      return Stream.value(_getSampleHealthCases()
+          .where((c) => c.riskLevel == HealthRiskLevel.critical || c.riskLevel == HealthRiskLevel.high)
+          .toList());
+    }
+    return ref
         .where('riskLevel', whereIn: [HealthRiskLevel.critical.name, HealthRiskLevel.high.name])
         .orderBy('reportedAt', descending: true)
         .snapshots()
@@ -208,7 +255,11 @@ class HealthService {
 
   /// Stream a single case by ID
   static Stream<HealthCaseModel?> streamCaseById(String caseId) {
-    return _casesRef.doc(caseId).snapshots().map((snap) {
+    final ref = _casesRef;
+    if (ref == null) {
+      return Stream.value(null);
+    }
+    return ref.doc(caseId).snapshots().map((snap) {
       if (!snap.exists || snap.data() == null) return null;
       return HealthCaseModel.fromJson({...snap.data()!, 'id': snap.id});
     });
@@ -227,6 +278,8 @@ class HealthService {
     String? diagnosis,
     String? treatmentPlanId,
   }) async {
+    final ref = _casesRef;
+    if (ref == null) return;
     try {
       final updates = <String, dynamic>{
         'status': newStatus.name,
@@ -236,7 +289,7 @@ class HealthService {
       if (diagnosis != null) updates['diagnosis'] = diagnosis;
       if (treatmentPlanId != null) updates['treatmentPlanId'] = treatmentPlanId;
 
-      await _casesRef.doc(caseId).update(updates);
+      await ref.doc(caseId).update(updates);
     } catch (e) {
       debugPrint('[HealthService.updateCaseStatus] Error: $e');
     }
@@ -248,8 +301,10 @@ class HealthService {
     String vetId, {
     String? notes,
   }) async {
+    final ref = _casesRef;
+    if (ref == null) return;
     try {
-      await _casesRef.doc(caseId).update({
+      await ref.doc(caseId).update({
         'assignedVetId': vetId,
         'status': HealthCaseStatus.vet_assigned.name,
         if (notes != null) 'veterinarianAssessment': notes,

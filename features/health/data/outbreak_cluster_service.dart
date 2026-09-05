@@ -6,13 +6,24 @@ import 'package:flock_sense/features/health/domain/outbreak_cluster_model.dart';
 class OutbreakClusterService {
   OutbreakClusterService._();
 
-  static final _firestore = FirebaseFirestore.instance;
-  static CollectionReference<Map<String, dynamic>> get _clustersRef =>
-      _firestore.collection('outbreak_clusters');
+  static FirebaseFirestore? get _firestoreOrNull {
+    try {
+      return FirebaseFirestore.instance;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static CollectionReference<Map<String, dynamic>>? get _clustersRef =>
+      _firestoreOrNull?.collection('outbreak_clusters');
 
   /// Stream all active outbreak clusters across Maharashtra
   static Stream<List<OutbreakClusterModel>> streamActiveClusters() {
-    return _clustersRef
+    final ref = _clustersRef;
+    if (ref == null) {
+      return Stream.value([_getDemoCluster()]);
+    }
+    return ref
         .where('status', whereIn: [
           OutbreakClusterStatus.potential.name,
           OutbreakClusterStatus.under_investigation.name,
@@ -39,7 +50,11 @@ class OutbreakClusterService {
 
   /// Stream outbreak clusters for a specific administrative district
   static Stream<List<OutbreakClusterModel>> streamClustersByDistrict(String district) {
-    return _clustersRef
+    final ref = _clustersRef;
+    if (ref == null) {
+      return Stream.value([_getDemoCluster()]);
+    }
+    return ref
         .where('district', isEqualTo: district)
         .orderBy('updatedAt', descending: true)
         .snapshots()
@@ -61,7 +76,11 @@ class OutbreakClusterService {
 
   /// Stream a single outbreak cluster by ID
   static Stream<OutbreakClusterModel?> streamClusterById(String clusterId) {
-    return _clustersRef.doc(clusterId).snapshots().map((doc) {
+    final ref = _clustersRef;
+    if (ref == null) {
+      return Stream.value(_getDemoCluster());
+    }
+    return ref.doc(clusterId).snapshots().map((doc) {
       if (!doc.exists || doc.data() == null) {
         return _getDemoCluster();
       }

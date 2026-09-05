@@ -177,15 +177,18 @@ class AppSidebar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final sections = _getSectionsForRole(currentRole);
-    final user = FirebaseAuth.instance.currentUser;
+    User? user;
+    try {
+      user = FirebaseAuth.instance.currentUser;
+    } catch (_) {}
 
     return Container(
       width: isCollapsed ? AppDesign.sidebarCollapsedWidth : AppDesign.sidebarWidth,
       height: double.infinity,
       decoration: const BoxDecoration(
-        color: AppColors.slate900,
+        color: AppColors.surface,
         border: Border(
-          right: BorderSide(color: AppColors.slate800, width: 1),
+          right: BorderSide(color: AppColors.border, width: 1),
         ),
       ),
       child: Column(
@@ -199,7 +202,7 @@ class AppSidebar extends StatelessWidget {
             ),
             decoration: const BoxDecoration(
               border: Border(
-                bottom: BorderSide(color: AppColors.slate800, width: 1),
+                bottom: BorderSide(color: AppColors.border, width: 1),
               ),
             ),
             child: Row(
@@ -230,8 +233,8 @@ class AppSidebar extends StatelessWidget {
                           'FlockSense',
                           style: TextStyle(
                             fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.slate900,
                             letterSpacing: -0.3,
                           ),
                         ),
@@ -239,8 +242,8 @@ class AppSidebar extends StatelessWidget {
                           'SIH26128 • $currentRole',
                           style: const TextStyle(
                             fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.slate400,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.slate500,
                           ),
                         ),
                       ],
@@ -249,7 +252,7 @@ class AppSidebar extends StatelessWidget {
                   if (onToggleCollapse != null)
                     IconButton(
                       icon: const Icon(Icons.menu_open_rounded, size: 18),
-                      color: AppColors.slate400,
+                      color: AppColors.slate500,
                       onPressed: onToggleCollapse,
                       tooltip: 'Collapse sidebar',
                       splashRadius: 16,
@@ -284,25 +287,34 @@ class AppSidebar extends StatelessWidget {
                       final isSelected = selectedIndex == item.index;
 
                       Widget button = Material(
-                        color: isSelected ? AppColors.slate800 : Colors.transparent,
+                        color: isSelected ? AppColors.primarySoft : Colors.transparent,
                         borderRadius: BorderRadius.circular(AppDesign.radiusMd),
                         child: InkWell(
                           onTap: () => onItemSelected(item.index),
                           borderRadius: BorderRadius.circular(AppDesign.radiusMd),
-                          hoverColor: AppColors.slate800.withOpacity(0.6),
+                          hoverColor: AppColors.slate100,
                           child: Container(
                             height: 38,
                             padding: EdgeInsets.symmetric(
                               horizontal: isCollapsed ? 12 : 12,
                             ),
+                            decoration: isSelected
+                                ? BoxDecoration(
+                                    borderRadius: BorderRadius.circular(AppDesign.radiusMd),
+                                    border: Border.all(
+                                      color: AppColors.healthyBorder.withValues(alpha: 0.8),
+                                      width: 1,
+                                    ),
+                                  )
+                                : null,
                             child: Row(
                               children: [
                                 Icon(
                                   item.icon,
                                   size: 18,
                                   color: isSelected
-                                      ? AppColors.primaryLight
-                                      : AppColors.slate400,
+                                      ? AppColors.primary
+                                      : AppColors.slate500,
                                 ),
                                 if (!isCollapsed) ...[
                                   const SizedBox(width: 12),
@@ -312,11 +324,11 @@ class AppSidebar extends StatelessWidget {
                                       style: TextStyle(
                                         fontSize: 13,
                                         fontWeight: isSelected
-                                            ? FontWeight.w600
-                                            : FontWeight.w400,
+                                            ? FontWeight.w700
+                                            : FontWeight.w500,
                                         color: isSelected
-                                            ? Colors.white
-                                            : AppColors.slate300,
+                                            ? AppColors.primaryDark
+                                            : AppColors.slate700,
                                       ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
@@ -378,37 +390,47 @@ class AppSidebar extends StatelessWidget {
             padding: const EdgeInsets.all(12),
             decoration: const BoxDecoration(
               border: Border(
-                top: BorderSide(color: AppColors.slate800, width: 1),
+                top: BorderSide(color: AppColors.border, width: 1),
               ),
             ),
             child: Column(
               children: [
                 // Settings Item
                 Material(
-                  color: selectedIndex == _settingsIndex ? AppColors.slate800 : Colors.transparent,
+                  color: selectedIndex == _settingsIndex ? AppColors.primarySoft : Colors.transparent,
                   borderRadius: BorderRadius.circular(AppDesign.radiusMd),
                   child: InkWell(
                     onTap: () => onItemSelected(_settingsIndex),
                     borderRadius: BorderRadius.circular(AppDesign.radiusMd),
-                    hoverColor: AppColors.slate800.withOpacity(0.6),
+                    hoverColor: AppColors.slate100,
                     child: Container(
                       height: 38,
                       padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: selectedIndex == _settingsIndex
+                          ? BoxDecoration(
+                              borderRadius: BorderRadius.circular(AppDesign.radiusMd),
+                              border: Border.all(
+                                color: AppColors.healthyBorder.withValues(alpha: 0.8),
+                                width: 1,
+                              ),
+                            )
+                          : null,
                       child: Row(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.settings_outlined,
                             size: 18,
-                            color: AppColors.slate400,
+                            color: selectedIndex == _settingsIndex ? AppColors.primary : AppColors.slate500,
                           ),
                           if (!isCollapsed) ...[
                             const SizedBox(width: 12),
-                            const Expanded(
+                            Expanded(
                               child: Text(
                                 'Settings',
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: AppColors.slate300,
+                                  fontWeight: selectedIndex == _settingsIndex ? FontWeight.w700 : FontWeight.w500,
+                                  color: selectedIndex == _settingsIndex ? AppColors.primaryDark : AppColors.slate700,
                                 ),
                               ),
                             ),
@@ -423,17 +445,21 @@ class AppSidebar extends StatelessWidget {
                 // User Info
                 if (!isCollapsed)
                   Material(
-                    color: selectedIndex == _profileIndex ? AppColors.slate800 : Colors.transparent,
+                    color: selectedIndex == _profileIndex ? AppColors.primarySoft : Colors.transparent,
                     borderRadius: BorderRadius.circular(AppDesign.radiusMd),
                     child: InkWell(
                       onTap: () => onItemSelected(_profileIndex),
                       borderRadius: BorderRadius.circular(AppDesign.radiusMd),
-                      hoverColor: AppColors.slate800.withOpacity(0.6),
+                      hoverColor: AppColors.slate100,
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: selectedIndex == _profileIndex ? AppColors.slate800 : AppColors.slate950,
+                          color: selectedIndex == _profileIndex ? AppColors.primarySoft : AppColors.slate50,
                           borderRadius: BorderRadius.circular(AppDesign.radiusMd),
+                          border: Border.all(
+                            color: selectedIndex == _profileIndex ? AppColors.healthyBorder : AppColors.border,
+                            width: 1,
+                          ),
                         ),
                         child: Row(
                           children: [
@@ -460,8 +486,8 @@ class AppSidebar extends StatelessWidget {
                                     user?.displayName ?? user?.email?.split('@').first ?? 'Dr. V. Sharma',
                                     style: const TextStyle(
                                       fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.white,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.slate900,
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -470,7 +496,8 @@ class AppSidebar extends StatelessWidget {
                                     '$currentRole Access',
                                     style: const TextStyle(
                                       fontSize: 10.5,
-                                      color: AppColors.slate400,
+                                      fontWeight: FontWeight.w500,
+                                      color: AppColors.slate500,
                                     ),
                                   ),
                                 ],

@@ -276,6 +276,7 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
         });
       },
       body: IndexedStack(
+        key: ValueKey(_currentRole),
         index: _currentIndex,
         children: _buildScreens(activeFarm),
       ),
