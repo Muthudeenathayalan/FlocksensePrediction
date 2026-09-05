@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flock_sense/core/theme/app_colors.dart';
 import 'package:flock_sense/core/theme/app_typography.dart';
 
-/// Standard Web Page Header for all screens
-/// Provides Page Title, brief Subtitle, optional Breadcrumb path, and Action Buttons.
+/// Agronex-Inspired Web Page Header for FlockSense
+/// Features clean, bold geometric typography, metadata subtitle, and stadium pill action buttons.
 class WebPageHeader extends StatelessWidget {
   final String title;
   final String? subtitle;
@@ -29,15 +29,16 @@ class WebPageHeader extends StatelessWidget {
         children: [
           if (breadcrumb != null) ...[
             Text(
-              breadcrumb!,
+              breadcrumb!.toUpperCase(),
               style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: AppColors.slate500,
-                letterSpacing: 0.2,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textMuted,
+                letterSpacing: 0.8,
+                decoration: TextDecoration.none,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
           ],
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -48,13 +49,21 @@ class WebPageHeader extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: AppTypography.pageTitle,
+                      style: AppTypography.pageTitle.copyWith(
+                        fontSize: 25,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.6,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
                     if (subtitle != null) ...[
                       const SizedBox(height: 4),
                       Text(
                         subtitle!,
-                        style: AppTypography.pageSubtitle,
+                        style: AppTypography.pageSubtitle.copyWith(
+                          fontSize: 13,
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                     ],
                   ],
@@ -71,7 +80,7 @@ class WebPageHeader extends StatelessWidget {
               ],
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 18),
           const Divider(height: 1, color: AppColors.divider),
         ],
       ),

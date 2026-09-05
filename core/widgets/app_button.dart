@@ -17,6 +17,7 @@ enum AppButtonSize {
   large,
 }
 
+/// Agronex-Inspired Stadium Pill Button Component
 class AppButton extends StatelessWidget {
   const AppButton({
     super.key,
@@ -48,18 +49,18 @@ class AppButton extends StatelessWidget {
       case AppButtonSize.small:
         return 34;
       case AppButtonSize.medium:
-        return 40;
+        return 42;
       case AppButtonSize.large:
-        return 46;
+        return 48;
     }
   }
 
   double get _fontSize {
     switch (size) {
       case AppButtonSize.small:
-        return 12.5;
+        return 12.0;
       case AppButtonSize.medium:
-        return 13.5;
+        return 13.0;
       case AppButtonSize.large:
         return 14.5;
     }
@@ -79,11 +80,11 @@ class AppButton extends StatelessWidget {
   EdgeInsets get _padding {
     switch (size) {
       case AppButtonSize.small:
-        return const EdgeInsets.symmetric(horizontal: 12, vertical: 6);
+        return const EdgeInsets.symmetric(horizontal: 14, vertical: 6);
       case AppButtonSize.medium:
-        return const EdgeInsets.symmetric(horizontal: 16, vertical: 8);
+        return const EdgeInsets.symmetric(horizontal: 20, vertical: 9);
       case AppButtonSize.large:
-        return const EdgeInsets.symmetric(horizontal: 20, vertical: 10);
+        return const EdgeInsets.symmetric(horizontal: 24, vertical: 12);
     }
   }
 
@@ -98,40 +99,34 @@ class AppButton extends StatelessWidget {
     switch (variant) {
       case AppButtonVariant.primary:
       case AppButtonVariant.gradient:
-        bg = effectiveDisabled ? AppColors.slate300 : AppColors.primary;
-        fg = Colors.white;
+        bg = effectiveDisabled ? AppColors.slate200 : AppColors.primary;
+        fg = effectiveDisabled ? AppColors.slate400 : AppColors.onPrimary;
         break;
       case AppButtonVariant.secondary:
-        bg = effectiveDisabled ? AppColors.slate100 : AppColors.slate100;
-        fg = effectiveDisabled ? AppColors.slate400 : AppColors.slate800;
-        border = BorderSide(color: AppColors.slate200, width: 1);
+        bg = effectiveDisabled ? AppColors.slate200 : AppColors.primaryDark;
+        fg = effectiveDisabled ? AppColors.slate400 : Colors.white;
         break;
       case AppButtonVariant.outlined:
         bg = Colors.transparent;
-        fg = effectiveDisabled ? AppColors.slate400 : AppColors.slate700;
+        fg = effectiveDisabled ? AppColors.slate400 : AppColors.textPrimary;
         border = BorderSide(
-          color: effectiveDisabled ? AppColors.slate200 : AppColors.slate300,
-          width: 1,
+          color: effectiveDisabled ? AppColors.slate200 : AppColors.border,
+          width: 1.2,
         );
+        break;
+      case AppButtonVariant.danger:
+        bg = effectiveDisabled ? AppColors.slate200 : AppColors.critical;
+        fg = effectiveDisabled ? AppColors.slate400 : Colors.white;
         break;
       case AppButtonVariant.text:
         bg = Colors.transparent;
-        fg = effectiveDisabled ? AppColors.slate400 : AppColors.primary;
-        break;
-      case AppButtonVariant.danger:
-        bg = effectiveDisabled ? AppColors.slate200 : AppColors.criticalBg;
-        fg = effectiveDisabled ? AppColors.slate400 : AppColors.critical;
-        border = BorderSide(
-          color: effectiveDisabled ? AppColors.slate200 : AppColors.criticalBorder,
-          width: 1,
-        );
+        fg = effectiveDisabled ? AppColors.slate400 : AppColors.textPrimary;
         break;
     }
 
-    Widget content = Row(
-      mainAxisSize: width == null ? MainAxisSize.min : MainAxisSize.max,
+    final child = Row(
+      mainAxisSize: width != null ? MainAxisSize.max : MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         if (isLoading) ...[
           SizedBox(
@@ -145,19 +140,20 @@ class AppButton extends StatelessWidget {
           const SizedBox(width: 8),
         ] else if (icon != null) ...[
           Icon(icon, size: _iconSize, color: fg),
-          const SizedBox(width: 6),
+          const SizedBox(width: 7),
         ],
         Text(
           label,
           style: TextStyle(
-            fontSize: _fontSize,
-            fontWeight: FontWeight.w600,
             color: fg,
-            letterSpacing: 0.1,
+            fontSize: _fontSize,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.2,
+            decoration: TextDecoration.none,
           ),
         ),
         if (trailingIcon != null && !isLoading) ...[
-          const SizedBox(width: 6),
+          const SizedBox(width: 7),
           Icon(trailingIcon, size: _iconSize, color: fg),
         ],
       ],
@@ -167,20 +163,28 @@ class AppButton extends StatelessWidget {
       height: _height,
       width: width,
       child: Material(
-        color: bg,
-        borderRadius: BorderRadius.circular(AppDesign.radiusMd),
+        color: Colors.transparent,
         child: InkWell(
           onTap: effectiveDisabled ? null : onPressed,
-          borderRadius: BorderRadius.circular(AppDesign.radiusMd),
-          child: Container(
+          borderRadius: BorderRadius.circular(AppDesign.radiusPill),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
             padding: _padding,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(AppDesign.radiusMd),
-              border: border != BorderSide.none
-                  ? Border.fromBorderSide(border)
+              color: bg,
+              borderRadius: BorderRadius.circular(AppDesign.radiusPill),
+              border: border != BorderSide.none ? Border.fromBorderSide(border) : null,
+              boxShadow: (variant == AppButtonVariant.primary && !effectiveDisabled)
+                  ? [
+                      BoxShadow(
+                        color: AppColors.primary.withOpacity(0.35),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3),
+                      ),
+                    ]
                   : null,
             ),
-            child: Center(child: content),
+            child: child,
           ),
         ),
       ),

@@ -15,6 +15,7 @@ class AppTypography {
     letterSpacing: -0.5,
     height: 1.2,
     color: AppColors.textPrimary,
+    decoration: TextDecoration.none,
   );
 
   static const TextStyle pageSubtitle = TextStyle(
@@ -23,6 +24,7 @@ class AppTypography {
     fontWeight: FontWeight.w400,
     height: 1.4,
     color: AppColors.textSecondary,
+    decoration: TextDecoration.none,
   );
 
   static const TextStyle sectionTitle = TextStyle(
@@ -32,6 +34,7 @@ class AppTypography {
     letterSpacing: -0.2,
     height: 1.3,
     color: AppColors.textPrimary,
+    decoration: TextDecoration.none,
   );
 
   static const TextStyle cardTitle = TextStyle(
@@ -40,6 +43,7 @@ class AppTypography {
     fontWeight: FontWeight.w600,
     letterSpacing: -0.1,
     color: AppColors.textPrimary,
+    decoration: TextDecoration.none,
   );
 
   static const TextStyle tableHeader = TextStyle(
@@ -48,6 +52,7 @@ class AppTypography {
     fontWeight: FontWeight.w600,
     letterSpacing: 0.3,
     color: AppColors.textSecondary,
+    decoration: TextDecoration.none,
   );
 
   static const TextStyle tableCell = TextStyle(
@@ -55,6 +60,7 @@ class AppTypography {
     fontSize: 13,
     fontWeight: FontWeight.w500,
     color: AppColors.textPrimary,
+    decoration: TextDecoration.none,
   );
 
   static const TextStyle kpiValue = TextStyle(
@@ -63,6 +69,7 @@ class AppTypography {
     fontWeight: FontWeight.w700,
     letterSpacing: -0.5,
     color: AppColors.textPrimary,
+    decoration: TextDecoration.none,
   );
 
   static const TextStyle kpiLabel = TextStyle(
@@ -70,6 +77,7 @@ class AppTypography {
     fontSize: 13,
     fontWeight: FontWeight.w500,
     color: AppColors.textSecondary,
+    decoration: TextDecoration.none,
   );
 
   static const TextStyle metadata = TextStyle(
@@ -77,6 +85,7 @@ class AppTypography {
     fontSize: 12,
     fontWeight: FontWeight.w400,
     color: AppColors.textMuted,
+    decoration: TextDecoration.none,
   );
 
   // ── Compatibility Aliases ────────────────────────────────────────────────
@@ -93,6 +102,7 @@ class AppTypography {
     letterSpacing: -0.8,
     height: 1.2,
     color: AppColors.textPrimary,
+    decoration: TextDecoration.none,
   );
 
   static const TextStyle displayMedium = TextStyle(
@@ -102,6 +112,7 @@ class AppTypography {
     letterSpacing: -0.6,
     height: 1.2,
     color: AppColors.textPrimary,
+    decoration: TextDecoration.none,
   );
 
   static const TextStyle displaySmall = TextStyle(
@@ -111,6 +122,7 @@ class AppTypography {
     letterSpacing: -0.4,
     height: 1.25,
     color: AppColors.textPrimary,
+    decoration: TextDecoration.none,
   );
 
   static const TextStyle headlineLarge = TextStyle(
@@ -120,6 +132,7 @@ class AppTypography {
     letterSpacing: -0.3,
     height: 1.3,
     color: AppColors.textPrimary,
+    decoration: TextDecoration.none,
   );
 
   static const TextStyle headlineMedium = TextStyle(
@@ -129,6 +142,7 @@ class AppTypography {
     letterSpacing: -0.2,
     height: 1.3,
     color: AppColors.textPrimary,
+    decoration: TextDecoration.none,
   );
 
   static const TextStyle headlineSmall = TextStyle(
@@ -138,6 +152,7 @@ class AppTypography {
     letterSpacing: -0.1,
     height: 1.35,
     color: AppColors.textPrimary,
+    decoration: TextDecoration.none,
   );
 
   static const TextStyle titleLarge = TextStyle(
@@ -147,6 +162,7 @@ class AppTypography {
     letterSpacing: 0,
     height: 1.4,
     color: AppColors.textPrimary,
+    decoration: TextDecoration.none,
   );
 
   static const TextStyle titleMedium = TextStyle(
@@ -156,6 +172,7 @@ class AppTypography {
     letterSpacing: 0.1,
     height: 1.4,
     color: AppColors.textPrimary,
+    decoration: TextDecoration.none,
   );
 
   static const TextStyle titleSmall = TextStyle(
@@ -165,6 +182,7 @@ class AppTypography {
     letterSpacing: 0.1,
     height: 1.4,
     color: AppColors.textPrimary,
+    decoration: TextDecoration.none,
   );
 
   static const TextStyle bodyLarge = TextStyle(
@@ -174,6 +192,7 @@ class AppTypography {
     letterSpacing: 0.1,
     height: 1.5,
     color: AppColors.textPrimary,
+    decoration: TextDecoration.none,
   );
 
   static const TextStyle bodyMedium = TextStyle(
@@ -183,6 +202,7 @@ class AppTypography {
     letterSpacing: 0.15,
     height: 1.5,
     color: AppColors.textSecondary,
+    decoration: TextDecoration.none,
   );
 
   static const TextStyle bodySmall = TextStyle(
@@ -192,6 +212,7 @@ class AppTypography {
     letterSpacing: 0.2,
     height: 1.4,
     color: AppColors.textMuted,
+    decoration: TextDecoration.none,
   );
 
   static const TextStyle labelLarge = TextStyle(
@@ -200,6 +221,7 @@ class AppTypography {
     fontWeight: FontWeight.w600,
     letterSpacing: 0.1,
     color: AppColors.textPrimary,
+    decoration: TextDecoration.none,
   );
 
   static const TextStyle labelMedium = TextStyle(
@@ -208,6 +230,7 @@ class AppTypography {
     fontWeight: FontWeight.w500,
     letterSpacing: 0.2,
     color: AppColors.textSecondary,
+    decoration: TextDecoration.none,
   );
 
   static const TextStyle labelSmall = TextStyle(
@@ -216,6 +239,7 @@ class AppTypography {
     fontWeight: FontWeight.w500,
     letterSpacing: 0.3,
     color: AppColors.textMuted,
+    decoration: TextDecoration.none,
   );
 
   static TextTheme get lightTextTheme => const TextTheme(

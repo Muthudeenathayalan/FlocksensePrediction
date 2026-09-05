@@ -37,21 +37,16 @@ class PageContainer extends StatelessWidget {
       ),
     );
 
-    if (scrollable) {
-      return ColoredBox(
-        color: AppColors.background,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(
-            parent: BouncingScrollPhysics(),
-          ),
-          child: content,
-        ),
-      );
-    }
-
-    return ColoredBox(
-      color: AppColors.background,
+    final pageContent = SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(
+        parent: BouncingScrollPhysics(),
+      ),
       child: content,
+    );
+
+    return Material(
+      color: AppColors.background,
+      child: scrollable ? pageContent : content,
     );
   }
 }
