@@ -156,7 +156,7 @@ class _GovernmentGisMapScreenState extends State<GovernmentGisMapScreen> {
                   ),
                   const SizedBox(height: 20),
 
-                  // 3. Full Interactive GIS Map Canvas with Tactical Controls
+                  // 3. Full Interactive Real-Time Tile GIS Map with Tactical Controls
                   SurveillanceGisMap(
                     farmMarkers: farms,
                     activeClusters: clusters,
@@ -164,12 +164,8 @@ class _GovernmentGisMapScreenState extends State<GovernmentGisMapScreen> {
                     onDistrictChanged: (dist) => setState(() => _selectedDistrict = dist),
                     onClusterSelected: _showClusterDetailDialog,
                     onFarmSelected: _showFarmDetailDialog,
-                    height: 560,
+                    height: 640,
                   ),
-                  const SizedBox(height: 16),
-
-                  // 4. Map Layer Controls & GIS Legend Bar
-                  _buildGisControlAndLegendBar(),
                   const SizedBox(height: 20),
                 ],
               ),
@@ -177,68 +173,6 @@ class _GovernmentGisMapScreenState extends State<GovernmentGisMapScreen> {
           },
         );
       },
-    );
-  }
-
-  Widget _buildGisControlAndLegendBar() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppDesign.radiusLg),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Left: Layer Toggles
-          Row(
-            children: [
-              const Text('Surveillance Layers:', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.slate700)),
-              const SizedBox(width: 12),
-              FilterChip(
-                label: const Text('10km Quarantine Cordon', style: TextStyle(fontSize: 12)),
-                selected: _showQuarantineRings,
-                selectedColor: AppColors.critical.withOpacity(0.15),
-                onSelected: (val) => setState(() => _showQuarantineRings = val),
-              ),
-              const SizedBox(width: 8),
-              FilterChip(
-                label: const Text('High-Density Corridors', style: TextStyle(fontSize: 12)),
-                selected: _showHighDensityCorridors,
-                selectedColor: AppColors.info.withOpacity(0.15),
-                onSelected: (val) => setState(() => _showHighDensityCorridors = val),
-              ),
-            ],
-          ),
-
-          // Right: Semantic Map Legend
-          Row(
-            children: [
-              _buildLegendPin(AppColors.critical, 'Active Outbreak / Critical (Score >= 76)'),
-              const SizedBox(width: 16),
-              _buildLegendPin(AppColors.warning, 'Elevated Risk (Score 51-75)'),
-              const SizedBox(width: 16),
-              _buildLegendPin(AppColors.healthy, 'Normal / Tier-1 Compliant'),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLegendPin(Color color, String label) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 10,
-          height: 10,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 6),
-        Text(label, style: const TextStyle(fontSize: 12, color: AppColors.slate600)),
-      ],
     );
   }
 }

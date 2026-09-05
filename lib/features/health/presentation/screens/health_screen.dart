@@ -10,14 +10,19 @@ import 'package:flock_sense/core/widgets/page_container.dart';
 import 'package:flock_sense/core/widgets/responsive_data_table.dart';
 import 'package:flock_sense/core/widgets/status_badge.dart';
 import 'package:flock_sense/core/widgets/web_page_header.dart';
+import 'package:flock_sense/features/health/data/government_surveillance_service.dart';
 import 'package:flock_sense/features/health/data/health_service.dart';
+import 'package:flock_sense/features/health/data/outbreak_cluster_service.dart';
+import 'package:flock_sense/features/health/domain/district_surveillance_model.dart';
 import 'package:flock_sense/features/health/domain/health_case_model.dart';
+import 'package:flock_sense/features/health/domain/outbreak_cluster_model.dart';
 import 'package:flock_sense/features/health/presentation/widgets/ai_health_assessment_card.dart';
 import 'package:flock_sense/features/health/presentation/widgets/explainable_risk_breakdown_card.dart';
 import 'package:flock_sense/features/health/presentation/widgets/farm_prevention_dashboard_card.dart';
 import 'package:flock_sense/features/health/presentation/widgets/farmer_veterinary_guidance_card.dart';
 import 'package:flock_sense/features/health/presentation/widgets/lab_diagnostic_workflow_card.dart';
 import 'package:flock_sense/features/health/presentation/widgets/outbreak_cluster_alert_card.dart';
+import 'package:flock_sense/features/health/presentation/widgets/surveillance_gis_map.dart';
 import 'package:flock_sense/features/health/presentation/widgets/vet_priority_queue_card.dart';
 
 class HealthScreen extends StatefulWidget {
@@ -302,88 +307,26 @@ class _HealthScreenState extends State<HealthScreen>
   }
 
   Widget _buildGisMapTab() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: AppDesign.cardDecoration,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Maharashtra Regional Disease Surveillance GIS Map', style: AppTypography.cardTitle),
-                  SizedBox(height: 2),
-                  Text('Real-time geo-tagged outbreak clusters & bio-security containment zones', style: AppTypography.metadata),
-                ],
+    return StreamBuilder<List<OutbreakClusterModel>>(
+      stream: OutbreakClusterService.streamActiveClusters(),
+      builder: (context, clusterSnap) {
+        final clusters = clusterSnap.data ?? [];
+        return StreamBuilder<List<FarmGisMapMarker>>(
+          stream: GovernmentSurveillanceService.streamFarmGisMarkers(),
+          builder: (context, farmSnap) {
+            final farms = farmSnap.data ?? [];
+            return ClipRRect(
+              borderRadius: BorderRadius.circular(AppDesign.radiusLg),
+              child: SurveillanceGisMap(
+                height: 620,
+                farmMarkers: farms,
+                activeClusters: clusters,
+                selectedDistrict: 'All',
               ),
-              Row(
-                children: [
-                  _buildLegendItem('Healthy (Tier-1)', AppColors.healthy),
-                  const SizedBox(width: 12),
-                  _buildLegendItem('Monitoring', AppColors.warning),
-                  const SizedBox(width: 12),
-                  _buildLegendItem('Critical Outbreak Zone', AppColors.critical),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Interactive Map Simulation Canvas
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: const Color(0xFF0F172A),
-                borderRadius: BorderRadius.circular(AppDesign.radiusMd),
-                border: Border.all(color: AppColors.slate800, width: 1),
-              ),
-              child: Stack(
-                children: [
-                  // Map Background Grid Lines
-                  Positioned.fill(
-                    child: CustomPaint(
-                      painter: _GisGridPainter(),
-                    ),
-                  ),
-
-                  // Simulated Farm Clusters with clickable nodes
-                  _buildMapNode(120, 180, 'Green Valley Farm (Nashik)', 'CRITICAL (NDV Suspected)', AppColors.critical),
-                  _buildMapNode(280, 240, 'Sunrise Farm Unit 01 (Pune)', 'HEALTHY (4 Flocks)', AppColors.healthy),
-                  _buildMapNode(420, 160, 'Kalyan Broiler Hatchery (Thane)', 'MONITORING', AppColors.warning),
-                  _buildMapNode(550, 290, 'Shree Ganesh Agro (Satara)', 'HEALTHY', AppColors.healthy),
-                  _buildMapNode(220, 360, 'Solapur Integrated Unit #3', 'HEALTHY', AppColors.healthy),
-
-                  // Map Controls Floating Panel
-                  Positioned(
-                    top: 16,
-                    left: 16,
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppColors.slate900.withOpacity(0.9),
-                        borderRadius: BorderRadius.circular(AppDesign.radiusMd),
-                        border: Border.all(color: AppColors.slate700, width: 1),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text('DISTRICT: NASHIK DIVISION', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
-                          SizedBox(height: 4),
-                          Text('Farms Screened: 142 • Active Alerts: 2', style: TextStyle(color: AppColors.slate300, fontSize: 11)),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -455,49 +398,7 @@ class _HealthScreenState extends State<HealthScreen>
     );
   }
 
-  Widget _buildLegendItem(String label, Color color) {
-    return Row(
-      children: [
-        Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-        const SizedBox(width: 6),
-        Text(label, style: const TextStyle(fontSize: 12, color: AppColors.slate700, fontWeight: FontWeight.w500)),
-      ],
-    );
-  }
 
-  Widget _buildMapNode(double left, double top, String title, String status, Color color) {
-    return Positioned(
-      left: left,
-      top: top,
-      child: Tooltip(
-        message: '$title\nStatus: $status',
-        child: InkWell(
-          onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Selected GIS node: $title ($status)')),
-            );
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.9),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white, width: 1.5),
-              boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 6)],
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.location_on_rounded, size: 12, color: Colors.white),
-                const SizedBox(width: 4),
-                Text(title.split(' ').first, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white)),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 
   Widget _buildTimelineStep(String time, String title, String desc, bool isDone) {
     return Padding(
@@ -1057,23 +958,4 @@ class _CaseDetailsDossierModal extends StatelessWidget {
       ),
     );
   }
-}
-
-class _GisGridPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFF1E293B)
-      ..strokeWidth = 1;
-
-    for (double i = 0; i < size.width; i += 40) {
-      canvas.drawLine(Offset(i, 0), Offset(i, size.height), paint);
-    }
-    for (double j = 0; j < size.height; j += 40) {
-      canvas.drawLine(Offset(0, j), Offset(size.width, j), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

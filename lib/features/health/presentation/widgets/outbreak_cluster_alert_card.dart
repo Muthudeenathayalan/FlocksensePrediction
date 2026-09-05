@@ -40,10 +40,10 @@ class OutbreakClusterAlertCard extends StatelessWidget {
   Widget _buildFarmerAnonymizedWarning(OutbreakClusterModel cluster) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.criticalBg.withOpacity(0.4),
-        borderRadius: BorderRadius.circular(AppDesign.radiusLg),
-        border: Border.all(color: AppColors.critical.withOpacity(0.4)),
-        boxShadow: AppDesign.cardShadow,
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppDesign.radiusMd),
+        border: Border.all(color: AppColors.critical.withValues(alpha: 0.35)),
+        boxShadow: AppDesign.subtleShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -51,36 +51,43 @@ class OutbreakClusterAlertCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
             decoration: BoxDecoration(
-              color: AppColors.critical.withOpacity(0.12),
+              color: AppColors.criticalBg.withValues(alpha: 0.5),
               borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(AppDesign.radiusLg),
-                topRight: Radius.circular(AppDesign.radiusLg),
+                topLeft: Radius.circular(AppDesign.radiusMd),
+                topRight: Radius.circular(AppDesign.radiusMd),
               ),
-              border: const Border(bottom: BorderSide(color: AppColors.critical, width: 0.5)),
+              border: Border(bottom: BorderSide(color: AppColors.critical.withValues(alpha: 0.2), width: 1)),
             ),
             child: Row(
               children: [
-                const Icon(Icons.warning_amber_rounded, color: AppColors.critical, size: 22),
-                const SizedBox(width: 10),
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: AppColors.critical.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Icon(Icons.shield_outlined, color: AppColors.critical, size: 18),
+                ),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'REGIONAL DISEASE ACTIVITY ADVISORY',
-                        style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: AppColors.critical),
+                        'Regional Disease Activity Advisory',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.critical),
                       ),
+                      const SizedBox(height: 2),
                       Text(
                         'Elevated ${cluster.syndrome} health signals detected within ~${cluster.radiusKm.toStringAsFixed(0)} km in ${cluster.district} district.',
-                        style: const TextStyle(fontSize: 11.5, color: AppColors.slate800),
+                        style: const TextStyle(fontSize: 12, color: AppColors.slate700),
                       ),
                     ],
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(color: AppColors.critical, borderRadius: BorderRadius.circular(4)),
-                  child: const Text('PREVENTIVE ALERT', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.white)),
+                StatusBadge(
+                  label: 'PREVENTIVE ALERT',
+                  type: StatusBadgeType.critical,
                 ),
               ],
             ),
@@ -90,36 +97,37 @@ class OutbreakClusterAlertCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('RECOMMENDED BIOSECURITY & PRECAUTIONARY ACTIONS:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.5, color: AppColors.slate700)),
-                const SizedBox(height: 8),
-                const Row(
-                  children: [
-                    Icon(Icons.check_circle_outline, size: 15, color: AppColors.critical),
-                    SizedBox(width: 8),
-                    Expanded(child: Text('Restrict all non-essential farm visitors and poultry delivery vehicles.', style: TextStyle(fontSize: 12, color: AppColors.slate800))),
-                  ],
+                const Text(
+                  'Recommended Biosecurity Precautions:',
+                  style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: AppColors.slate800),
                 ),
+                const SizedBox(height: 10),
+                _buildActionRow('Restrict all non-essential farm visitors and poultry delivery vehicles.'),
                 const SizedBox(height: 6),
-                const Row(
-                  children: [
-                    Icon(Icons.check_circle_outline, size: 15, color: AppColors.critical),
-                    SizedBox(width: 8),
-                    Expanded(child: Text('Replenish potassium permanganate / virucidal footbaths at all shed entry points.', style: TextStyle(fontSize: 12, color: AppColors.slate800))),
-                  ],
-                ),
+                _buildActionRow('Replenish virucidal footbaths at all shed entry points.'),
                 const SizedBox(height: 6),
-                const Row(
-                  children: [
-                    Icon(Icons.check_circle_outline, size: 15, color: AppColors.critical),
-                    SizedBox(width: 8),
-                    Expanded(child: Text('Inspect flock immediately for respiratory clicking or drop in daily water intake.', style: TextStyle(fontSize: 12, color: AppColors.slate800))),
-                  ],
-                ),
+                _buildActionRow('Inspect flock immediately for respiratory clicking or drop in daily water intake.'),
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildActionRow(String text) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Icon(Icons.check_circle_outline_rounded, size: 15, color: AppColors.primary),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(fontSize: 12, color: AppColors.slate700, height: 1.3),
+          ),
+        ),
+      ],
     );
   }
 
