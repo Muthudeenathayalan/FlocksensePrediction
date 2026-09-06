@@ -10,6 +10,7 @@ import 'package:flock_sense/features/main_shell/presentation/screens/main_shell_
 import 'package:flock_sense/features/performance/presentation/screens/growth_analytics_screen.dart';
 import 'package:flock_sense/features/inventory/presentation/screens/inventory_dashboard_screen.dart';
 import 'package:flock_sense/features/calendar/presentation/screens/calendar_dashboard_screen.dart';
+import 'package:flock_sense/features/landing/presentation/screens/agriculture_landing_screen.dart';
 
 class AppRoutes {
   AppRoutes._();
@@ -24,6 +25,7 @@ class AppRoutes {
   static const String growthAnalytics = '/growth-analytics';
   static const String inventory = '/inventory';
   static const String calendar = '/calendar';
+  static const String landing = '/landing';
 
   static final Map<String, WidgetBuilder> routes = {
     initial: (_) => const AuthWrapper(),
@@ -38,5 +40,6 @@ class AppRoutes {
     growthAnalytics: (_) => const GrowthAnalyticsScreen(),
     inventory: (_) => const InventoryDashboardScreen(),
     calendar: (_) => const CalendarDashboardScreen(),
+    landing: (_) => const AgricultureLandingScreen(),
   };
 }
