@@ -6,43 +6,43 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  // ── Agronex Signature Brand Palette ──────────────────────────────────────
-  static const Color primary = Color(0xFFD2F546); // Electric Lime / Chartreuse (Agronex Accent)
-  static const Color primaryDark = Color(0xFF0C1311); // Deep Obsidian Slate
-  static const Color primaryMedium = Color(0xFFBCE62E); // Vibrant Lime Medium
-  static const Color primaryLight = Color(0xFFF1FCD1); // Soft Lime Tint
-  static const Color primarySoft = Color(0xFFF8FEE8); // Ultra-light Lime Glow
-  static const Color primaryHover = Color(0xFFC3E835); // Hover Accent
+  // ── Green and White Signature Brand Palette ─────────────────────────────
+  static const Color primary = Color(0xFF15803D); // Clinical Emerald Green
+  static const Color primaryDark = Color(0xFF14532D); // Deep Forest Green
+  static const Color primaryMedium = Color(0xFF16A34A); // Vibrant Emerald Green
+  static const Color primaryLight = Color(0xFFDCFCE7); // Crisp Mint Tint
+  static const Color primarySoft = Color(0xFFF0FDF4); // Ultra-light Fresh Mint Glow
+  static const Color primaryHover = Color(0xFF166534); // Deep Forest Green Hover
 
   // ── Obsidian & Slate Neutrals ───────────────────────────────────────────
   static const Color slate950 = Color(0xFF070B0A); // Deepest Obsidian
-  static const Color slate900 = Color(0xFF0C1311); // Major Headers & Dark Containers
-  static const Color slate800 = Color(0xFF151E1C); // Sidebar & Elevated Dark Cards
-  static const Color slate700 = Color(0xFF263330); // Dark Border / Dark Surface Muted
-  static const Color slate600 = Color(0xFF4B5B57); // Primary Body Text
-  static const Color slate500 = Color(0xFF6E7E7A); // Secondary Text
-  static const Color slate400 = Color(0xFF9BA9A5); // Muted / Metadata Text
-  static const Color slate300 = Color(0xFFCBD5D2); // Moderate Hairline Borders
-  static const Color slate200 = Color(0xFFE5EBE9); // Subtle Dividers & Card Borders
-  static const Color slate100 = Color(0xFFEEF2F1); // Light Backgrounds / Table Headers
-  static const Color slate50 = Color(0xFFF4F5F6); // Agronex Off-White / Pale Ice Background
+  static const Color slate900 = Color(0xFF0F172A); // Major Headers & Dark Slate
+  static const Color slate800 = Color(0xFF1E293B); // Elevated Slate Cards
+  static const Color slate700 = Color(0xFF334155); // Slate Border / Dark Surface Muted
+  static const Color slate600 = Color(0xFF475569); // Primary Body Text
+  static const Color slate500 = Color(0xFF64748B); // Secondary Text
+  static const Color slate400 = Color(0xFF94A3B8); // Muted / Metadata Text
+  static const Color slate300 = Color(0xFFCBD5E1); // Moderate Hairline Borders
+  static const Color slate200 = Color(0xFFE2E8F0); // Subtle Dividers & Card Borders
+  static const Color slate100 = Color(0xFFF1F5F9); // Light Backgrounds / Table Headers
+  static const Color slate50 = Color(0xFFF8FAFC); // Clean Pale White Canvas
 
   // ── Surfaces & Canvas ───────────────────────────────────────────────────
-  static const Color background = slate50;
+  static const Color background = Color(0xFFF8FAFC);
   static const Color surface = Color(0xFFFFFFFF);
-  static const Color surfaceSoft = Color(0xFFF8F9FA);
-  static const Color surfaceSubtle = slate100;
+  static const Color surfaceSoft = Color(0xFFF0FDF4);
+  static const Color surfaceSubtle = Color(0xFFF8FAFC);
   static const Color surfaceElevated = Color(0xFFFFFFFF);
-  static const Color darkCanvas = Color(0xFF0C1311);
-  static const Color darkSurface = Color(0xFF151E1C);
+  static const Color darkCanvas = Color(0xFF14532D);
+  static const Color darkSurface = Color(0xFF0F3A22);
 
   // ── Text Tokens ─────────────────────────────────────────────────────────
-  static const Color textPrimary = Color(0xFF111111);
-  static const Color textSecondary = Color(0xFF555555);
-  static const Color textMuted = Color(0xFF888888);
-  static const Color textHint = Color(0xFFAAAAAA);
-  static const Color textDisabled = Color(0xFFCCCCCC);
-  static const Color onPrimary = Color(0xFF0C1311); // Dark text on Electric Lime buttons
+  static const Color textPrimary = Color(0xFF0F172A);
+  static const Color textSecondary = Color(0xFF475569);
+  static const Color textMuted = Color(0xFF64748B);
+  static const Color textHint = Color(0xFF94A3B8);
+  static const Color textDisabled = Color(0xFFCBD5E1);
+  static const Color onPrimary = Color(0xFFFFFFFF); // Pure White text on Green buttons
 
   // ── Borders, Dividers & Shadows ─────────────────────────────────────────
   static const Color border = Color(0xFFE5E8EB);
@@ -112,7 +112,7 @@ class AppColors {
   static const LinearGradient primaryGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF0C1311), Color(0xFF151E1C)],
+    colors: [Color(0xFF15803D), Color(0xFF166534)],
   );
 
   static const LinearGradient dangerGradient = LinearGradient(

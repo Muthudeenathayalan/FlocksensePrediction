@@ -14,10 +14,10 @@ class AppTheme {
       onPrimary: AppColors.onPrimary,
       primaryContainer: AppColors.primaryLight,
       onPrimaryContainer: AppColors.primaryDark,
-      secondary: AppColors.slate800,
+      secondary: AppColors.primaryHover,
       onSecondary: Colors.white,
-      secondaryContainer: AppColors.slate100,
-      onSecondaryContainer: AppColors.slate900,
+      secondaryContainer: AppColors.primarySoft,
+      onSecondaryContainer: AppColors.primaryDark,
       tertiary: AppColors.info,
       onTertiary: Colors.white,
       tertiaryContainer: AppColors.infoBg,
@@ -62,7 +62,7 @@ class AppTheme {
         ),
         titleTextStyle: AppTypography.titleLarge,
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: AppColors.surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
@@ -169,7 +169,7 @@ class AppTheme {
           fontWeight: FontWeight.w500,
         ),
       ),
-      dialogTheme: DialogTheme(
+      dialogTheme: DialogThemeData(
         backgroundColor: AppColors.surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
@@ -177,7 +177,7 @@ class AppTheme {
           side: const BorderSide(color: AppColors.border, width: 1),
         ),
       ),
-      tabBarTheme: TabBarTheme(
+      tabBarTheme: TabBarThemeData(
         labelColor: AppColors.primary,
         unselectedLabelColor: AppColors.textSecondary,
         indicatorColor: AppColors.primary,
