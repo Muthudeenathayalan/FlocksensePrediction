@@ -179,22 +179,14 @@ class _FarmerDashboardScreenState extends ConsumerState<FarmerDashboardScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF0C1311), // Agronex Deep Obsidian Slate
-            Color(0xFF131E1B),
-            Color(0xFF1A2A26),
-          ],
-        ),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(AppDesign.radiusLg),
-        border: Border.all(color: const Color(0xFF223530), width: 1),
-        boxShadow: [
+        border: Border.all(color: const Color(0xFFBBF7D0), width: 1.5),
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.35),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
+            color: Color(0x0C15803D),
+            blurRadius: 24,
+            offset: Offset(0, 6),
           ),
         ],
       ),
@@ -218,13 +210,13 @@ class _FarmerDashboardScreenState extends ConsumerState<FarmerDashboardScreen> {
                           width: 52,
                           height: 52,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFD2F546).withValues(alpha: 0.15),
+                            color: const Color(0xFFF0FDF4),
                             borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: const Color(0xFFD2F546).withValues(alpha: 0.4)),
+                            border: Border.all(color: const Color(0xFFBBF7D0), width: 1.2),
                           ),
                           child: const Icon(
                             Icons.agriculture_rounded,
-                            color: Color(0xFFD2F546),
+                            color: Color(0xFF15803D),
                             size: 28,
                           ),
                         ),
@@ -241,7 +233,7 @@ class _FarmerDashboardScreenState extends ConsumerState<FarmerDashboardScreen> {
                                       style: const TextStyle(
                                         fontSize: 22,
                                         fontWeight: FontWeight.w800,
-                                        color: Colors.white,
+                                        color: Color(0xFF0F172A),
                                         letterSpacing: -0.5,
                                       ),
                                       overflow: TextOverflow.ellipsis,
@@ -252,14 +244,14 @@ class _FarmerDashboardScreenState extends ConsumerState<FarmerDashboardScreen> {
                                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                                     decoration: BoxDecoration(
                                       color: isOptimal
-                                          ? const Color(0xFFD2F546).withValues(alpha: 0.15)
-                                          : const Color(0xFFF59E0B).withValues(alpha: 0.15),
+                                          ? const Color(0xFFF0FDF4)
+                                          : const Color(0xFFFEF3C7),
                                       borderRadius: BorderRadius.circular(100),
                                       border: Border.all(
                                         color: isOptimal
-                                            ? const Color(0xFFD2F546)
-                                            : const Color(0xFFFBBF24),
-                                        width: 1,
+                                            ? const Color(0xFF86EFAC)
+                                            : const Color(0xFFFCD34D),
+                                        width: 1.2,
                                       ),
                                     ),
                                     child: Row(
@@ -271,8 +263,8 @@ class _FarmerDashboardScreenState extends ConsumerState<FarmerDashboardScreen> {
                                           decoration: BoxDecoration(
                                             shape: BoxShape.circle,
                                             color: isOptimal
-                                                ? const Color(0xFFD2F546)
-                                                : const Color(0xFFFBBF24),
+                                                ? const Color(0xFF15803D)
+                                                : const Color(0xFFD97706),
                                           ),
                                         ),
                                         const SizedBox(width: 6),
@@ -283,8 +275,8 @@ class _FarmerDashboardScreenState extends ConsumerState<FarmerDashboardScreen> {
                                             fontWeight: FontWeight.w800,
                                             letterSpacing: 0.4,
                                             color: isOptimal
-                                                ? const Color(0xFFD2F546)
-                                                : const Color(0xFFFEF3C7),
+                                                ? const Color(0xFF15803D)
+                                                : const Color(0xFFB45309),
                                           ),
                                         ),
                                       ],
@@ -295,10 +287,10 @@ class _FarmerDashboardScreenState extends ConsumerState<FarmerDashboardScreen> {
                               const SizedBox(height: 4),
                               Text(
                                 'Farmer: $displayName • ${activeContext.batchName ?? "Active Flock Monitoring"} • Broiler Batch 01',
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontSize: 13,
-                                  color: Colors.white.withValues(alpha: 0.82),
-                                  fontWeight: FontWeight.w400,
+                                  color: Color(0xFF475569),
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ],
@@ -308,25 +300,25 @@ class _FarmerDashboardScreenState extends ConsumerState<FarmerDashboardScreen> {
                     ),
                   ),
 
-                  // Farm Selector Dropdown (Glassmorphism Pill)
+                  // Farm Selector Dropdown (Pill)
                   if (effectiveFarms.length > 1 && !isNarrow) ...[
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.08),
+                        color: const Color(0xFFF0FDF4),
                         borderRadius: BorderRadius.circular(100),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                        border: Border.all(color: const Color(0xFFBBF7D0), width: 1.2),
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
                           value: selectedFarmId,
-                          dropdownColor: const Color(0xFF131E1B),
-                          icon: const Icon(Icons.swap_horiz_rounded, size: 20, color: Color(0xFFD2F546)),
-                          style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                          dropdownColor: Colors.white,
+                          icon: const Icon(Icons.swap_horiz_rounded, size: 20, color: Color(0xFF15803D)),
+                          style: const TextStyle(color: Color(0xFF14532D), fontSize: 13, fontWeight: FontWeight.w700),
                           items: effectiveFarms.map((f) {
                             return DropdownMenuItem<String>(
                               value: f.id,
-                              child: Text(f.farmName, style: const TextStyle(color: Colors.white)),
+                              child: Text(f.farmName, style: const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.w600)),
                             );
                           }).toList(),
                           onChanged: (farmId) {
@@ -345,11 +337,11 @@ class _FarmerDashboardScreenState extends ConsumerState<FarmerDashboardScreen> {
 
               // Bottom Stats Strip in Banner: Weather + IoT Sync + Harvest Days
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.25),
+                  color: const Color(0xFFF0FDF4),
                   borderRadius: BorderRadius.circular(100),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                  border: Border.all(color: const Color(0xFFDCFCE7), width: 1.2),
                 ),
                 child: Wrap(
                   spacing: 20,
@@ -394,21 +386,21 @@ class _FarmerDashboardScreenState extends ConsumerState<FarmerDashboardScreen> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 16, color: const Color(0xFFD2F546)),
+        Icon(icon, size: 16, color: const Color(0xFF15803D)),
         const SizedBox(width: 6),
         Text(
           '$label: ',
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 12,
-            color: Colors.white.withValues(alpha: 0.7),
-            fontWeight: FontWeight.w400,
+            color: Color(0xFF64748B),
+            fontWeight: FontWeight.w500,
           ),
         ),
         Text(
           value,
           style: const TextStyle(
             fontSize: 12,
-            color: Colors.white,
+            color: Color(0xFF0F172A),
             fontWeight: FontWeight.w700,
           ),
         ),
