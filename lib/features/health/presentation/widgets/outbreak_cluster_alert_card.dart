@@ -157,39 +157,45 @@ class OutbreakClusterAlertCard extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(color: AppColors.critical, borderRadius: BorderRadius.circular(AppDesign.radiusSm)),
-                      child: const Icon(Icons.radar_rounded, color: Colors.white, size: 20),
-                    ),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
+                Expanded(
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(color: AppColors.critical, borderRadius: BorderRadius.circular(AppDesign.radiusSm)),
+                        child: const Icon(Icons.radar_rounded, color: Colors.white, size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('POSSIBLE OUTBREAK CLUSTER • ${cluster.clusterCode}', style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w800, color: AppColors.critical)),
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(color: AppColors.critical, borderRadius: BorderRadius.circular(4)),
-                              child: Text(
-                                cluster.severity.toUpperCase(),
-                                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.white),
-                              ),
+                            Wrap(
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              spacing: 8,
+                              children: [
+                                Text('POSSIBLE OUTBREAK CLUSTER • ${cluster.clusterCode}', style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w800, color: AppColors.critical)),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(color: AppColors.critical, borderRadius: BorderRadius.circular(4)),
+                                  child: Text(
+                                    cluster.severity.toUpperCase(),
+                                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.white),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Text(
+                              '${cluster.possibleDisease} • ${cluster.district} District (${cluster.state})',
+                              style: const TextStyle(fontSize: 12, color: AppColors.slate700, fontWeight: FontWeight.w500),
                             ),
                           ],
                         ),
-                        Text(
-                          '${cluster.possibleDisease} • ${cluster.district} District (${cluster.state})',
-                          style: const TextStyle(fontSize: 12, color: AppColors.slate700, fontWeight: FontWeight.w500),
-                        ),
-                      ],
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 8),
                 StatusBadge.fromStatus(cluster.status.name),
               ],
             ),
@@ -279,7 +285,14 @@ class OutbreakClusterAlertCard extends StatelessWidget {
               children: [
                 Icon(icon, size: 14, color: AppColors.slate600),
                 const SizedBox(width: 6),
-                Text(label, style: const TextStyle(fontSize: 10.5, color: AppColors.slate600, fontWeight: FontWeight.w600)),
+                Expanded(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 10.5, color: AppColors.slate600, fontWeight: FontWeight.w600),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 4),

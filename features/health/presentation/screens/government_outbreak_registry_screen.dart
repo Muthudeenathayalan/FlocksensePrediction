@@ -65,6 +65,30 @@ class _GovernmentOutbreakRegistryScreenState
                 title: 'Outbreak Cluster Registry & Quarantine Cordon Management',
                 subtitle: 'Automated DBSCAN spatial outbreak detection, quarantine perimeter enforcement, and rapid response unit tracking.',
                 actions: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEE2E2),
+                      borderRadius: BorderRadius.circular(AppDesign.radiusSm),
+                      border: Border.all(color: const Color(0xFFFCA5A5)),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.warning_amber_rounded, color: Color(0xFFDC2626), size: 12),
+                        SizedBox(width: 5),
+                        Text(
+                          'INCIDENT COMMAND ACTIVE',
+                          style: TextStyle(
+                            color: Color(0xFFDC2626),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
                   AppButton(
                     label: 'Declare Containment Cordon',
                     icon: Icons.shield_outlined,
@@ -86,51 +110,61 @@ class _GovernmentOutbreakRegistryScreenState
                 ],
               ),
 
-              // 2. 4 High-Impact Operational Outbreak KPIs
-              Row(
-                children: [
-                  Expanded(
-                    child: MetricCard(
-                      title: 'Active Outbreak Clusters',
-                      value: '${clusters.length} Active',
-                      subtitle: 'Multi-farm transmission zones',
-                      delta: 'Priority-1',
-                      isPositiveDelta: false,
-                      icon: Icons.warning_amber_rounded,
-                      accentColor: AppColors.critical,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: MetricCard(
-                      title: 'Quarantined Facilities',
-                      value: '$totalFarms Commercial Farms',
-                      subtitle: 'Inside containment buffer',
-                      icon: Icons.storefront_outlined,
-                      accentColor: AppColors.highRisk,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: MetricCard(
-                      title: 'Birds in Outbreak Zones',
-                      value: NumberFormat('#,###').format(totalAffected > 0 ? totalAffected : 67),
-                      subtitle: 'Clinical morbidity count',
-                      icon: Icons.sick_outlined,
-                      accentColor: AppColors.warning,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: MetricCard(
-                      title: 'Cumulative Mortality',
-                      value: NumberFormat('#,###').format(totalMortality > 0 ? totalMortality : 38),
-                      subtitle: '72-hour spatial window',
-                      icon: Icons.heart_broken_outlined,
-                      accentColor: AppColors.slate700,
-                    ),
-                  ),
-                ],
+              // 2. 4 High-Impact Operational Outbreak KPIs (Responsive)
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final isDesktop = constraints.maxWidth > 900;
+                  final cardWidth = isDesktop ? (constraints.maxWidth - 48) / 4 : (constraints.maxWidth - 16) / 2;
+
+                  return Wrap(
+                    spacing: 16,
+                    runSpacing: 16,
+                    children: [
+                      SizedBox(
+                        width: cardWidth,
+                        child: MetricCard(
+                          title: 'Active Outbreak Clusters',
+                          value: '${clusters.length} Active',
+                          subtitle: 'Multi-farm transmission zones',
+                          delta: 'Priority-1',
+                          isPositiveDelta: false,
+                          icon: Icons.warning_amber_rounded,
+                          accentColor: AppColors.critical,
+                        ),
+                      ),
+                      SizedBox(
+                        width: cardWidth,
+                        child: MetricCard(
+                          title: 'Quarantined Facilities',
+                          value: '$totalFarms Commercial Farms',
+                          subtitle: 'Inside containment buffer',
+                          icon: Icons.storefront_outlined,
+                          accentColor: AppColors.highRisk,
+                        ),
+                      ),
+                      SizedBox(
+                        width: cardWidth,
+                        child: MetricCard(
+                          title: 'Birds in Outbreak Zones',
+                          value: NumberFormat('#,###').format(totalAffected > 0 ? totalAffected : 67),
+                          subtitle: 'Clinical morbidity count',
+                          icon: Icons.sick_outlined,
+                          accentColor: AppColors.warning,
+                        ),
+                      ),
+                      SizedBox(
+                        width: cardWidth,
+                        child: MetricCard(
+                          title: 'Cumulative Mortality',
+                          value: NumberFormat('#,###').format(totalMortality > 0 ? totalMortality : 38),
+                          subtitle: '72-hour spatial window',
+                          icon: Icons.heart_broken_outlined,
+                          accentColor: AppColors.slate700,
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
               const SizedBox(height: 24),
 

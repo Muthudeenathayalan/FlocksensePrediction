@@ -30,10 +30,6 @@ class _GovernmentBiosecurityScreenState
         final assessments = snapshot.data ?? [];
         final isLoading = snapshot.connectionState == ConnectionState.waiting && assessments.isEmpty;
 
-        if (isLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
         final avgScore = assessments.isNotEmpty
             ? (assessments.map((a) => a.score).reduce((a, b) => a + b) / assessments.length).round()
             : 74;
@@ -63,17 +59,40 @@ class _GovernmentBiosecurityScreenState
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: AppColors.healthyBg,
+                        color: const Color(0xFFDCFCE7),
                         borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFBBF7D0)),
                       ),
-                      child: const Icon(Icons.shield_outlined, color: AppColors.healthy, size: 28),
+                      child: const Icon(Icons.shield_outlined, color: Color(0xFF15803D), size: 28),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Biosecurity & Prevention Vulnerability Matrix', style: AppTypography.pageTitle),
+                          Row(
+                            children: [
+                              Text('Biosecurity & Prevention Vulnerability Matrix', style: AppTypography.pageTitle),
+                              const SizedBox(width: 10),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFDCFCE7),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: const Color(0xFF86EFAC)),
+                                ),
+                                child: const Text(
+                                  'DAHD • PREVENTIVE BIOSECURITY POSTURE',
+                                  style: TextStyle(
+                                    color: Color(0xFF15803D),
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.3,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                           const SizedBox(height: 4),
                           Text(
                             'Assess farm physical barrier integrity, water sanitation compliance, visitor logs, and perimeter bird-proofing across commercial poultry belts.',
@@ -99,7 +118,7 @@ class _GovernmentBiosecurityScreenState
                       _buildKpiCard('State Biosecurity Index', '$avgScore / 100', Icons.verified_user_outlined, avgScore >= 75 ? AppColors.healthy : AppColors.warning, isNarrow ? constraints.maxWidth : cardWidth),
                       _buildKpiCard('High-Vulnerability Facilities', '$highVulnerability Farms (<60 Score)', Icons.warning_amber_rounded, AppColors.critical, isNarrow ? constraints.maxWidth : cardWidth),
                       _buildKpiCard('Critical Corrective Actions', '$pendingActions Directives', Icons.assignment_late_outlined, AppColors.highRisk, isNarrow ? constraints.maxWidth : cardWidth),
-                      _buildKpiCard('Perimeter Buffer Audits', '14 Active Audits', Icons.fence_outlined, AppColors.primary, isNarrow ? constraints.maxWidth : cardWidth),
+                      _buildKpiCard('Perimeter Buffer Audits', '14 Active Audits', Icons.fence_outlined, const Color(0xFF15803D), isNarrow ? constraints.maxWidth : cardWidth),
                     ],
                   );
                 },
@@ -128,7 +147,18 @@ class _GovernmentBiosecurityScreenState
                   children: [
                     Text('District Physical & Sanitary Biosecurity Index', style: AppTypography.cardTitle),
                     const SizedBox(height: 12),
-                    SingleChildScrollView(
+                    if (isLoading)
+                      const Padding(
+                        padding: EdgeInsets.all(32),
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    else if (filteredDistricts.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.all(32),
+                        child: Center(child: Text('No district biosecurity posture found.')),
+                      )
+                    else
+                      SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: DataTable(
                         columnSpacing: 24,
@@ -181,7 +211,7 @@ class _GovernmentBiosecurityScreenState
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text('Opening comprehensive sanitary biosecurity audit log for ${d.district}.'),
-                                        backgroundColor: AppColors.primary,
+                                        backgroundColor: const Color(0xFF15803D),
                                       ),
                                     );
                                   },

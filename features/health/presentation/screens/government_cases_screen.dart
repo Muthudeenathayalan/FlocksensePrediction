@@ -31,10 +31,6 @@ class _GovernmentCasesScreenState extends State<GovernmentCasesScreen> {
         final cases = snapshot.data ?? [];
         final isLoading = snapshot.connectionState == ConnectionState.waiting && cases.isEmpty;
 
-        if (isLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
         // Summary counts
         final totalCases = cases.length;
         final criticalCases = cases.where((c) => c.riskLevel == HealthRiskLevel.critical).length;
@@ -63,17 +59,40 @@ class _GovernmentCasesScreenState extends State<GovernmentCasesScreen> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: AppColors.criticalBg,
+                        color: const Color(0xFFFEE2E2),
                         borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFFECACA)),
                       ),
-                      child: const Icon(Icons.sick_outlined, color: AppColors.critical, size: 28),
+                      child: const Icon(Icons.sick_outlined, color: Color(0xFFDC2626), size: 28),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Regional Health Cases & Clinical Surveillance', style: AppTypography.pageTitle),
+                          Row(
+                            children: [
+                              Text('Regional Health Cases & Clinical Surveillance', style: AppTypography.pageTitle),
+                              const SizedBox(width: 10),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFDCFCE7),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: const Color(0xFF86EFAC)),
+                                ),
+                                child: const Text(
+                                  'DAHD • CLINICAL DISEASE SURVEILLANCE',
+                                  style: TextStyle(
+                                    color: Color(0xFF15803D),
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.3,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                           const SizedBox(height: 4),
                           Text(
                             'State-level oversight of reported poultry morbidity events, AI syndromic differentials, and veterinary diagnostic verification.',
@@ -96,10 +115,10 @@ class _GovernmentCasesScreenState extends State<GovernmentCasesScreen> {
                     spacing: 16,
                     runSpacing: 16,
                     children: [
-                      _buildKpiCard('Total Reported Cases', '$totalCases Incidents', Icons.folder_open_rounded, AppColors.primary, isNarrow ? constraints.maxWidth : cardWidth),
-                      _buildKpiCard('Critical Priority', '$criticalCases P1 Alerts', Icons.error_outline_rounded, AppColors.critical, isNarrow ? constraints.maxWidth : cardWidth),
-                      _buildKpiCard('Under Active Triage', '$underInvestigation Cases', Icons.medical_services_outlined, AppColors.warning, isNarrow ? constraints.maxWidth : cardWidth),
-                      _buildKpiCard('Lab Diagnostics Linked', '$labLinked Specimens', Icons.science_outlined, AppColors.indigo, isNarrow ? constraints.maxWidth : cardWidth),
+                      _buildKpiCard('Total Reported Cases', '$totalCases Incidents', Icons.folder_open_rounded, const Color(0xFF15803D), isNarrow ? constraints.maxWidth : cardWidth),
+                      _buildKpiCard('Critical Priority', '$criticalCases P1 Alerts', Icons.error_outline_rounded, const Color(0xFFDC2626), isNarrow ? constraints.maxWidth : cardWidth),
+                      _buildKpiCard('Under Active Triage', '$underInvestigation Cases', Icons.medical_services_outlined, const Color(0xFFD97706), isNarrow ? constraints.maxWidth : cardWidth),
+                      _buildKpiCard('Lab Diagnostics Linked', '$labLinked Specimens', Icons.science_outlined, const Color(0xFF4F46E5), isNarrow ? constraints.maxWidth : cardWidth),
                     ],
                   );
                 },
@@ -152,7 +171,12 @@ class _GovernmentCasesScreenState extends State<GovernmentCasesScreen> {
                   children: [
                     Text('Active Clinical Health Cases (Statewide Stream)', style: AppTypography.cardTitle),
                     const SizedBox(height: 12),
-                    if (filteredCases.isEmpty)
+                    if (isLoading)
+                      const Padding(
+                        padding: EdgeInsets.all(32),
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    else if (filteredCases.isEmpty)
                       const Padding(
                         padding: EdgeInsets.all(32),
                         child: Center(child: Text('No health cases matching selected filter criteria.')),

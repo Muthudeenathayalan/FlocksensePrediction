@@ -30,22 +30,41 @@ class GovernmentKpiData {
 class GovernmentSurveillanceService {
   GovernmentSurveillanceService._();
 
-  static final _firestore = FirebaseFirestore.instance;
+  static FirebaseFirestore? get _firestoreOrNull {
+    try {
+      return FirebaseFirestore.instance;
+    } catch (_) {
+      return null;
+    }
+  }
+
   static final _auditService = AuditService();
 
-  static CollectionReference<Map<String, dynamic>> get _clustersRef =>
-      _firestore.collection('outbreak_clusters');
-  static CollectionReference<Map<String, dynamic>> get _casesRef =>
-      _firestore.collection('health_cases');
-  static CollectionReference<Map<String, dynamic>> get _farmsRef =>
-      _firestore.collection('farms');
+  static CollectionReference<Map<String, dynamic>>? get _clustersRef =>
+      _firestoreOrNull?.collection('outbreak_clusters');
+  static CollectionReference<Map<String, dynamic>>? get _casesRef =>
+      _firestoreOrNull?.collection('health_cases');
+  static CollectionReference<Map<String, dynamic>>? get _farmsRef =>
+      _firestoreOrNull?.collection('farms');
 
   // ─────────────────────────────────────────────────────────────────────────────
   // 1. STREAM COMMAND CENTER TOP KPIs
   // ─────────────────────────────────────────────────────────────────────────────
 
   static Stream<GovernmentKpiData> streamCommandCenterKPIs() {
-    return _clustersRef.snapshots().asyncMap((clusterSnap) async {
+    final ref = _clustersRef;
+    if (ref == null) {
+      return Stream.value(const GovernmentKpiData(
+        activeClustersCount: 1,
+        criticalCasesCount: 3,
+        farmsAtRiskCount: 3,
+        affectedDistrictsCount: 1,
+        reportedAffectedBirds: 101,
+        stateVaccinationCoverage: 78.4,
+        averageVetResponseMinutes: 18,
+      ));
+    }
+    return ref.snapshots().asyncMap((clusterSnap) async {
       try {
         final clusters = clusterSnap.docs
             .map((d) => OutbreakClusterModel.fromJson({...d.data(), 'id': d.id}))
@@ -56,10 +75,10 @@ class GovernmentSurveillanceService {
                 c.status == OutbreakClusterStatus.confirmed)
             .toList();
 
-        final casesSnap = await _casesRef.get();
-        final cases = casesSnap.docs
+        final casesSnap = await _casesRef?.get();
+        final cases = casesSnap?.docs
             .map((d) => HealthCaseModel.fromJson({...d.data(), 'id': d.id}))
-            .toList();
+            .toList() ?? [];
 
         final activeClustersCount = clusters.length;
         final affectedFarms = clusters.fold<Set<String>>({}, (set, c) => set..addAll(c.farmIds));
@@ -96,12 +115,16 @@ class GovernmentSurveillanceService {
   // ─────────────────────────────────────────────────────────────────────────────
 
   static Stream<List<DistrictSurveillanceSummary>> streamDistrictSummaries() {
-    return _casesRef.snapshots().asyncMap((casesSnap) async {
+    final ref = _casesRef;
+    if (ref == null) {
+      return Stream.value(_getSampleDistricts());
+    }
+    return ref.snapshots().asyncMap((casesSnap) async {
       try {
-        final clustersSnap = await _clustersRef.get();
-        final clusters = clustersSnap.docs
+        final clustersSnap = await _clustersRef?.get();
+        final clusters = clustersSnap?.docs
             .map((d) => OutbreakClusterModel.fromJson({...d.data(), 'id': d.id}))
-            .toList();
+            .toList() ?? [];
 
         final cases = casesSnap.docs
             .map((d) => HealthCaseModel.fromJson({...d.data(), 'id': d.id}))
@@ -216,12 +239,16 @@ class GovernmentSurveillanceService {
   // ─────────────────────────────────────────────────────────────────────────────
 
   static Stream<List<FarmGisMapMarker>> streamFarmGisMarkers() {
-    return _farmsRef.snapshots().asyncMap((farmSnap) async {
+    final ref = _farmsRef;
+    if (ref == null) {
+      return Stream.value(_getDefaultMarkers());
+    }
+    return ref.snapshots().asyncMap((farmSnap) async {
       try {
-        final casesSnap = await _casesRef.get();
-        final cases = casesSnap.docs
+        final casesSnap = await _casesRef?.get();
+        final cases = casesSnap?.docs
             .map((d) => HealthCaseModel.fromJson({...d.data(), 'id': d.id}))
-            .toList();
+            .toList() ?? [];
 
         final markers = <FarmGisMapMarker>[];
         final now = DateTime.now();
@@ -304,88 +331,40 @@ class GovernmentSurveillanceService {
     final now = DateTime.now();
     return [
       FarmGisMapMarker(
-        farmId: 'farm_01',
-        farmName: 'Green Valley Poultry Farm (My Farm)',
+        farmId: 'farm_demo_001',
+        farmName: 'Green Valley Poultry Farm',
         district: 'Nashik',
         latitude: 19.9975,
         longitude: 73.7898,
-        highestRiskLevel: HealthRiskLevel.low,
-        activeCases: 0,
-        mortalityCount: 2,
-        currentSyndrome: 'Healthy • Tier-1 Biosecure',
-        lastReportedAt: now.subtract(const Duration(minutes: 5)),
+        highestRiskLevel: HealthRiskLevel.critical,
+        activeCases: 1,
+        mortalityCount: 15,
+        currentSyndrome: 'Acute Viral Respiratory Syndrome',
+        lastReportedAt: now.subtract(const Duration(minutes: 14)),
       ),
       FarmGisMapMarker(
         farmId: 'farm_demo_002',
-        farmName: 'Sahyadri Commercial Layer Hub',
+        farmName: 'Sahyadri Poultry Centre',
         district: 'Nashik',
         latitude: 20.0210,
         longitude: 73.8120,
         highestRiskLevel: HealthRiskLevel.critical,
-        activeCases: 2,
-        mortalityCount: 15,
-        currentSyndrome: 'Acute Newcastle Disease (NDV Suspected)',
-        lastReportedAt: now.subtract(const Duration(minutes: 14)),
+        activeCases: 1,
+        mortalityCount: 12,
+        currentSyndrome: 'Tracheal Rales & Sneezing',
+        lastReportedAt: now.subtract(const Duration(hours: 14)),
       ),
       FarmGisMapMarker(
-        farmId: 'farm_demo_003',
-        farmName: 'Shivneri Integrated Broilers',
+        farmId: 'farm_demo_004',
+        farmName: 'Shivneri Poultry Farm',
         district: 'Nashik',
         latitude: 19.9820,
         longitude: 73.8240,
         highestRiskLevel: HealthRiskLevel.critical,
         activeCases: 1,
-        mortalityCount: 12,
-        currentSyndrome: 'Infectious Bronchitis (IBV Symptoms)',
-        lastReportedAt: now.subtract(const Duration(hours: 3)),
-      ),
-      FarmGisMapMarker(
-        farmId: 'farm_demo_004',
-        farmName: 'Sunrise Agro Unit 01',
-        district: 'Pune',
-        latitude: 18.5204,
-        longitude: 73.8567,
-        highestRiskLevel: HealthRiskLevel.moderate,
-        activeCases: 1,
-        mortalityCount: 4,
-        currentSyndrome: 'Mild Respiratory Wheezing',
-        lastReportedAt: now.subtract(const Duration(hours: 6)),
-      ),
-      FarmGisMapMarker(
-        farmId: 'farm_demo_005',
-        farmName: 'Kalyan Broiler Hatchery',
-        district: 'Thane',
-        latitude: 19.2183,
-        longitude: 72.9781,
-        highestRiskLevel: HealthRiskLevel.low,
-        activeCases: 0,
-        mortalityCount: 1,
-        currentSyndrome: 'Healthy / Routine Layer Cycle',
-        lastReportedAt: now.subtract(const Duration(hours: 8)),
-      ),
-      FarmGisMapMarker(
-        farmId: 'farm_demo_006',
-        farmName: 'Shree Ganesh Agro Farms',
-        district: 'Satara',
-        latitude: 17.6805,
-        longitude: 74.0183,
-        highestRiskLevel: HealthRiskLevel.low,
-        activeCases: 0,
-        mortalityCount: 0,
-        currentSyndrome: 'Normal Operational Baseline',
-        lastReportedAt: now.subtract(const Duration(hours: 12)),
-      ),
-      FarmGisMapMarker(
-        farmId: 'farm_demo_007',
-        farmName: 'Godavari Commercial Breeders',
-        district: 'Ahmednagar',
-        latitude: 19.0948,
-        longitude: 74.7480,
-        highestRiskLevel: HealthRiskLevel.high,
-        activeCases: 1,
-        mortalityCount: 8,
-        currentSyndrome: 'Avian Coryza Symptoms',
-        lastReportedAt: now.subtract(const Duration(hours: 4)),
+        mortalityCount: 11,
+        currentSyndrome: 'Acute Gasping & Cyanosis',
+        lastReportedAt: now.subtract(const Duration(hours: 28)),
       ),
     ];
   }
@@ -400,8 +379,10 @@ class GovernmentSurveillanceService {
     required String reason,
     required String officerId,
   }) async {
+    final ref = _clustersRef;
+    if (ref == null) return false;
     try {
-      await _clustersRef.doc(clusterId).update({
+      await ref.doc(clusterId).update({
         'status': status.name,
         'statusUpdatedBy': officerId,
         'statusUpdateReason': reason,

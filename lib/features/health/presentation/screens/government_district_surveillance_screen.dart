@@ -36,10 +36,6 @@ class _GovernmentDistrictSurveillanceScreenState
         final rawList = snapshot.data ?? [];
         final isLoading = snapshot.connectionState == ConnectionState.waiting && rawList.isEmpty;
 
-        if (isLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
         // Summary metrics
         final totalDistricts = rawList.length;
         final criticalDistricts = rawList.where((d) => d.districtRiskLevel == HealthRiskLevel.critical).length;
@@ -80,17 +76,40 @@ class _GovernmentDistrictSurveillanceScreenState
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: AppColors.primaryLight,
+                        color: const Color(0xFFDCFCE7),
                         borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFBBF7D0)),
                       ),
-                      child: const Icon(Icons.analytics_outlined, color: AppColors.primary, size: 28),
+                      child: const Icon(Icons.analytics_outlined, color: Color(0xFF15803D), size: 28),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('District Surveillance & Epidemiological Triage', style: AppTypography.pageTitle),
+                          Row(
+                            children: [
+                              Text('District Surveillance & Epidemiological Triage', style: AppTypography.pageTitle),
+                              const SizedBox(width: 10),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFDCFCE7),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: const Color(0xFF86EFAC)),
+                                ),
+                                child: const Text(
+                                  'DAHD • EPIDEMIOLOGICAL TRIAGE',
+                                  style: TextStyle(
+                                    color: Color(0xFF15803D),
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.3,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                           const SizedBox(height: 4),
                           Text(
                             'Algorithmic risk scoring prioritizes districts requiring immediate containment cordons, field veterinary deployment, and vaccination surge.',
@@ -124,7 +143,7 @@ class _GovernmentDistrictSurveillanceScreenState
                           isPositiveDelta: true,
                           subtitle: 'Verified administrative bounds',
                           icon: Icons.location_city_rounded,
-                          accentColor: AppColors.primary,
+                          accentColor: const Color(0xFF15803D),
                         ),
                       ),
                       SizedBox(
@@ -253,7 +272,12 @@ class _GovernmentDistrictSurveillanceScreenState
                   children: [
                     Text('District Health Vulnerability Rankings (Highest Risk First)', style: AppTypography.cardTitle),
                     const SizedBox(height: 12),
-                    if (filteredList.isEmpty)
+                    if (isLoading)
+                      const Padding(
+                        padding: EdgeInsets.all(32),
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    else if (filteredList.isEmpty)
                       const Padding(
                         padding: EdgeInsets.all(32),
                         child: Center(child: Text('No districts matching selected filter criteria.')),

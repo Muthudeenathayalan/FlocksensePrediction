@@ -68,11 +68,35 @@ class _GovernmentGisMapScreenState extends State<GovernmentGisMapScreen> {
                     subtitle: 'Real-time spatial clustering, risk heatmaps, quarantine buffer zones, and geocoded poultry facilities.',
                     actions: [
                       Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFDCFCE7),
+                          borderRadius: BorderRadius.circular(AppDesign.radiusSm),
+                          border: Border.all(color: const Color(0xFFBBF7D0)),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.circle, color: Color(0xFF15803D), size: 6),
+                            SizedBox(width: 5),
+                            Text(
+                              'DAHD • LIVE EPIDEMIOLOGY',
+                              style: TextStyle(
+                                color: Color(0xFF15803D),
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                         decoration: BoxDecoration(
                           color: AppColors.surface,
                           borderRadius: BorderRadius.circular(AppDesign.radiusMd),
-                          border: Border.all(color: AppColors.border),
+                          border: Border.all(color: const Color(0xFFCBD5E1)),
                         ),
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
@@ -186,40 +210,50 @@ class _GovernmentGisMapScreenState extends State<GovernmentGisMapScreen> {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(AppDesign.radiusLg),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: AppDesign.subtleShadow,
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Wrap(
+        alignment: WrapAlignment.spaceBetween,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 20,
+        runSpacing: 14,
         children: [
           // Left: Layer Toggles
-          Row(
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 8,
             children: [
-              const Text('Surveillance Layers:', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.slate700)),
-              const SizedBox(width: 12),
+              const Text('Surveillance Layers:', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF0F172A))),
               FilterChip(
-                label: const Text('10km Quarantine Cordon', style: TextStyle(fontSize: 12)),
+                label: const Text('10km Quarantine Cordon', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                 selected: _showQuarantineRings,
-                selectedColor: AppColors.critical.withOpacity(0.15),
+                selectedColor: const Color(0xFFFEE2E2),
+                checkmarkColor: const Color(0xFFDC2626),
+                side: BorderSide(color: _showQuarantineRings ? const Color(0xFFF87171) : const Color(0xFFCBD5E1)),
                 onSelected: (val) => setState(() => _showQuarantineRings = val),
               ),
-              const SizedBox(width: 8),
               FilterChip(
-                label: const Text('High-Density Corridors', style: TextStyle(fontSize: 12)),
+                label: const Text('High-Density Corridors', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                 selected: _showHighDensityCorridors,
-                selectedColor: AppColors.info.withOpacity(0.15),
+                selectedColor: const Color(0xFFE0F2FE),
+                checkmarkColor: const Color(0xFF0284C7),
+                side: BorderSide(color: _showHighDensityCorridors ? const Color(0xFF38BDF8) : const Color(0xFFCBD5E1)),
                 onSelected: (val) => setState(() => _showHighDensityCorridors = val),
               ),
             ],
           ),
 
           // Right: Semantic Map Legend
-          Row(
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 16,
+            runSpacing: 8,
             children: [
-              _buildLegendPin(AppColors.critical, 'Active Outbreak / Critical (Score >= 76)'),
-              const SizedBox(width: 16),
-              _buildLegendPin(AppColors.warning, 'Elevated Risk (Score 51-75)'),
-              const SizedBox(width: 16),
-              _buildLegendPin(AppColors.healthy, 'Normal / Tier-1 Compliant'),
+              _buildLegendPin(const Color(0xFFDC2626), 'Active Outbreak (Score >= 76)'),
+              _buildLegendPin(const Color(0xFFF59E0B), 'Elevated Risk (Score 51-75)'),
+              _buildLegendPin(const Color(0xFF16A34A), 'Normal / Tier-1 Compliant'),
             ],
           ),
         ],

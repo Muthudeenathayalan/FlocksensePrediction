@@ -126,13 +126,16 @@ class _GovernmentVetResponseScreenState extends State<GovernmentVetResponseScree
             subtitle: 'Which veterinarians are handling which farms and how effectively? • Field triage velocity & workload',
             actions: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryLight,
+                  color: const Color(0xFFDCFCE7),
                   borderRadius: BorderRadius.circular(AppDesign.radiusSm),
-                  border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                  border: Border.all(color: const Color(0xFF86EFAC)),
                 ),
-                child: Text('$totalVets Duty Clinicians Deployed', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary)),
+                child: Text(
+                  '$totalVets Duty Clinicians Deployed',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF15803D)),
+                ),
               ),
             ],
           ),
@@ -148,7 +151,7 @@ class _GovernmentVetResponseScreenState extends State<GovernmentVetResponseScree
                 spacing: 12,
                 runSpacing: 12,
                 children: [
-                  _buildKpiCard('Total Clinicians', '$totalVets Registered', '100% Licensed', AppColors.primary, itemWidth),
+                  _buildKpiCard('Total Clinicians', '$totalVets Registered', '100% Licensed', const Color(0xFF15803D), itemWidth),
                   _buildKpiCard('Total Farms Covered', '$totalFarmsCovered Poultry Premises', 'Assigned Network', AppColors.healthy, itemWidth),
                   _buildKpiCard('Active Triage Caseload', '$totalActiveCases Incidents', 'Under Triage', AppColors.warning, itemWidth),
                   _buildKpiCard('State Avg Acceptance', '$avgAcceptance Minutes', 'Target: <30 min', AppColors.healthy, itemWidth),
@@ -256,10 +259,11 @@ class _GovernmentVetResponseScreenState extends State<GovernmentVetResponseScree
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: AppColors.primaryLight,
+                color: const Color(0xFFDCFCE7),
                 borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFBBF7D0)),
               ),
-              child: const Icon(Icons.person_pin_outlined, color: AppColors.primary),
+              child: const Icon(Icons.person_pin_outlined, color: Color(0xFF15803D)),
             ),
             const SizedBox(width: 14),
 

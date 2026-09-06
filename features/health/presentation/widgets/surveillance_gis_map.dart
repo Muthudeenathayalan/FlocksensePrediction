@@ -494,7 +494,9 @@ class _SurveillanceGisMapState extends State<SurveillanceGisMap>
           ),
         ],
       ),
-      child: Row(
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
         children: [
           // Live Pulse Beacon
           Container(
@@ -593,7 +595,7 @@ class _SurveillanceGisMapState extends State<SurveillanceGisMap>
               ],
             ),
           ),
-          const Spacer(),
+          const SizedBox(width: 16),
 
           // Layer Toggle Buttons
           _buildLayerChip(
@@ -621,7 +623,8 @@ class _SurveillanceGisMapState extends State<SurveillanceGisMap>
           ),
         ],
       ),
-    );
+    ),
+  );
   }
 
   Widget _buildTileTypeButton(String label, MapTileType type) {

@@ -7,16 +7,29 @@ import 'package:flock_sense/features/vaccine/domain/vaccine_record_model.dart';
 class VaccineService {
   VaccineService._();
 
-  static final _db = FirebaseFirestore.instance;
-  static final _auth = FirebaseAuth.instance;
+  static FirebaseFirestore? get _db {
+    try {
+      return FirebaseFirestore.instance;
+    } catch (_) {
+      return null;
+    }
+  }
 
-  static CollectionReference<Map<String, dynamic>> _vaccineRef(
+  static FirebaseAuth? get _auth {
+    try {
+      return FirebaseAuth.instance;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static CollectionReference<Map<String, dynamic>>? _vaccineRef(
     String uid,
     String farmId,
     String batchId,
   ) {
     return _db
-        .collection('users')
+        ?.collection('users')
         .doc(uid)
         .collection('farms')
         .doc(farmId)
@@ -30,10 +43,13 @@ class VaccineService {
     String batchId,
   ) {
     try {
-      final user = _auth.currentUser;
-      if (user == null) return const Stream.empty();
+      final uid = _auth?.currentUser?.uid ?? 'farmer_demo_user';
+      final ref = _vaccineRef(uid, farmId, batchId);
+      if (ref == null) {
+        return Stream.value([]);
+      }
 
-      return _vaccineRef(user.uid, farmId, batchId).snapshots().map((snapshot) {
+      return ref.snapshots().map((snapshot) {
         final records = snapshot.docs
             .map((doc) => VaccineRecordModel.fromJson(doc.data()))
             .toList();
@@ -42,7 +58,7 @@ class VaccineService {
       });
     } catch (e) {
       debugPrint('VaccineService.watchVaccineRecords failed: $e');
-      throw ExceptionMapper.mapException(e);
+      return Stream.value([]);
     }
   }
 
@@ -50,10 +66,13 @@ class VaccineService {
     required String farmId,
     required String batchId,
   }) async {
-    final user = _auth.currentUser;
+    final user = _auth?.currentUser;
     if (user == null) return [];
 
-    final snapshot = await _vaccineRef(user.uid, farmId, batchId).get();
+    final ref = _vaccineRef(user.uid, farmId, batchId);
+    if (ref == null) return [];
+
+    final snapshot = await ref.get();
     return snapshot.docs
         .map((doc) => VaccineRecordModel.fromJson(doc.data()))
         .toList();
@@ -75,7 +94,7 @@ class VaccineService {
     String? notes,
   }) async {
     try {
-      final uid = _auth.currentUser?.uid ?? 'farmer_demo_user';
+      final uid = _auth?.currentUser?.uid ?? 'farmer_demo_user';
 
       if (vaccineName.trim().isEmpty) {
         throw ValidationException('Vaccine name is required.');
@@ -113,7 +132,7 @@ class VaccineService {
           uid,
           farmId,
           batchId,
-        ).doc(record.id).set(record.toJson());
+        )?.doc(record.id).set(record.toJson());
       } catch (_) {}
       return record;
     } catch (e) {
@@ -128,8 +147,8 @@ class VaccineService {
     String recordId,
   ) async {
     try {
-      final uid = _auth.currentUser?.uid ?? 'farmer_demo_user';
-      await _vaccineRef(uid, farmId, batchId).doc(recordId).delete();
+      final uid = _auth?.currentUser?.uid ?? 'farmer_demo_user';
+      await _vaccineRef(uid, farmId, batchId)?.doc(recordId).delete();
     } catch (e) {
       debugPrint('VaccineService.deleteVaccineRecord note: $e');
     }

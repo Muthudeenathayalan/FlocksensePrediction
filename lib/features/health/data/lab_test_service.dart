@@ -9,15 +9,22 @@ import 'package:flock_sense/features/notifications/data/models/notification_mode
 class LabTestService {
   LabTestService._();
 
-  static final _firestore = FirebaseFirestore.instance;
+  static FirebaseFirestore? get _firestoreOrNull {
+    try {
+      return FirebaseFirestore.instance;
+    } catch (_) {
+      return null;
+    }
+  }
+
   static final _auditService = AuditService();
 
-  static CollectionReference<Map<String, dynamic>> get _labRef =>
-      _firestore.collection('lab_tests');
-  static CollectionReference<Map<String, dynamic>> get _casesRef =>
-      _firestore.collection('health_cases');
-  static CollectionReference<Map<String, dynamic>> get _usersRef =>
-      _firestore.collection('users');
+  static CollectionReference<Map<String, dynamic>>? get _labRef =>
+      _firestoreOrNull?.collection('lab_tests');
+  static CollectionReference<Map<String, dynamic>>? get _casesRef =>
+      _firestoreOrNull?.collection('health_cases');
+  static CollectionReference<Map<String, dynamic>>? get _usersRef =>
+      _firestoreOrNull?.collection('users');
 
   /// Generate a unique human-readable sample identifier
   static String generateSampleId(String caseNumber, int sequenceIndex) {
@@ -33,8 +40,10 @@ class LabTestService {
 
   /// Creates a new lab test record linked to a health case
   static Future<void> requestTest(LabTestModel test) async {
+    final ref = _labRef;
+    if (ref == null) return;
     try {
-      final docRef = test.id.isNotEmpty ? _labRef.doc(test.id) : _labRef.doc();
+      final docRef = test.id.isNotEmpty ? ref.doc(test.id) : ref.doc();
       final toSave = test.copyWith(id: docRef.id);
       await docRef.set(toSave.toJson(), SetOptions(merge: true));
 
@@ -69,8 +78,10 @@ class LabTestService {
     String? packagingCondition,
     String? notes,
   }) async {
+    final ref = _labRef;
+    if (ref == null) return false;
     try {
-      await _labRef.doc(testId).update({
+      await ref.doc(testId).update({
         'status': LabTestStatus.collected.name,
         'collectedBy': collectorName,
         'collectedAt': FieldValue.serverTimestamp(),
@@ -109,8 +120,10 @@ class LabTestService {
     String? trackingReference,
     String? transportNotes,
   }) async {
+    final ref = _labRef;
+    if (ref == null) return false;
     try {
-      await _labRef.doc(testId).update({
+      await ref.doc(testId).update({
         'status': LabTestStatus.dispatched.name,
         'destinationLab': destinationLab,
         'dispatchedAt': FieldValue.serverTimestamp(),
@@ -147,11 +160,13 @@ class LabTestService {
     required SampleReceiptCondition condition,
     String? rejectionReason,
   }) async {
+    final ref = _labRef;
+    if (ref == null) return false;
     try {
       final isRejected = condition != SampleReceiptCondition.acceptable;
       final newStatus = isRejected ? LabTestStatus.rejected : LabTestStatus.received;
 
-      await _labRef.doc(testId).update({
+      await ref.doc(testId).update({
         'status': newStatus.name,
         'receivedBy': receivedBy,
         'receivedAt': FieldValue.serverTimestamp(),
@@ -186,8 +201,10 @@ class LabTestService {
   static Future<bool> startTesting({
     required String testId,
   }) async {
+    final ref = _labRef;
+    if (ref == null) return false;
     try {
-      await _labRef.doc(testId).update({
+      await ref.doc(testId).update({
         'status': LabTestStatus.testing.name,
         'testingStartedAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
@@ -221,10 +238,13 @@ class LabTestService {
     List<String> attachments = const [],
     String? assignedVetId,
   }) async {
+    final firestore = _firestoreOrNull;
+    final labRef = _labRef;
+    if (firestore == null || labRef == null) return false;
     try {
-      final batch = _firestore.batch();
+      final batch = firestore.batch();
 
-      final testRef = _labRef.doc(testId);
+      final testRef = labRef.doc(testId);
       batch.update(testRef, {
         'status': LabTestStatus.result_available.name,
         'result': result,
@@ -237,9 +257,9 @@ class LabTestService {
       });
 
       // Notify Assigned Veterinarian that Lab Results are ready for clinical interpretation
-      if (assignedVetId != null && assignedVetId.isNotEmpty) {
+      if (assignedVetId != null && assignedVetId.isNotEmpty && _usersRef != null) {
         final notifId = 'notif_${caseId}_lab_result_${DateTime.now().millisecondsSinceEpoch}';
-        final notifRef = _usersRef.doc(assignedVetId).collection('notifications').doc(notifId);
+        final notifRef = _usersRef!.doc(assignedVetId).collection('notifications').doc(notifId);
         batch.set(notifRef, {
           'id': notifId,
           'title': '🧪 Diagnostic Lab Results Available',
@@ -288,11 +308,15 @@ class LabTestService {
     String? farmerId,
     String? caseNumber,
   }) async {
+    final firestore = _firestoreOrNull;
+    final labRef = _labRef;
+    final casesRef = _casesRef;
+    if (firestore == null || labRef == null || casesRef == null) return false;
     try {
-      final batch = _firestore.batch();
+      final batch = firestore.batch();
 
       // 1. Update LabTest record
-      final testRef = _labRef.doc(testId);
+      final testRef = labRef.doc(testId);
       batch.update(testRef, {
         'status': LabTestStatus.reviewed.name,
         'reviewedByVet': vetId,
@@ -305,7 +329,7 @@ class LabTestService {
 
       // 2. Update HealthCase authoritative diagnosis if clinician verified
       if (updateCaseDiagnosis) {
-        final caseRef = _casesRef.doc(caseId);
+        final caseRef = casesRef.doc(caseId);
         final statusLabel = diagnosisDecision == 'confirmed'
             ? 'Clinically & Lab Confirmed'
             : (diagnosisDecision == 'ruled_out' ? 'Ruled Out by Lab' : 'Provisional');
@@ -318,9 +342,9 @@ class LabTestService {
       }
 
       // 3. Dispatch Farmer Notification with veterinary confirmed guidance
-      if (farmerId != null && farmerId.isNotEmpty) {
+      if (farmerId != null && farmerId.isNotEmpty && _usersRef != null) {
         final notifId = 'notif_${caseId}_lab_reviewed_${DateTime.now().millisecondsSinceEpoch}';
-        final notifRef = _usersRef.doc(farmerId).collection('notifications').doc(notifId);
+        final notifRef = _usersRef!.doc(farmerId).collection('notifications').doc(notifId);
         batch.set(notifRef, {
           'id': notifId,
           'title': '📋 Laboratory Diagnostic Findings Reviewed',
@@ -363,16 +387,19 @@ class LabTestService {
     required String previousTestId,
     required LabTestModel newTest,
   }) async {
+    final firestore = _firestoreOrNull;
+    final labRef = _labRef;
+    if (firestore == null || labRef == null) return false;
     try {
-      final batch = _firestore.batch();
+      final batch = firestore.batch();
 
-      final prevRef = _labRef.doc(previousTestId);
+      final prevRef = labRef.doc(previousTestId);
       batch.update(prevRef, {
         'status': LabTestStatus.inconclusive.name,
         'updatedAt': FieldValue.serverTimestamp(),
       });
 
-      final newRef = _labRef.doc(newTest.id);
+      final newRef = labRef.doc(newTest.id);
       batch.set(newRef, newTest.toJson(), SetOptions(merge: true));
 
       await batch.commit();
@@ -400,7 +427,11 @@ class LabTestService {
 
   /// Stream all tests for a specific health case
   static Stream<List<LabTestModel>> streamTestsForCase(String caseId) {
-    return _labRef
+    final ref = _labRef;
+    if (ref == null) {
+      return Stream.value(_getSampleTests(caseId));
+    }
+    return ref
         .where('caseId', isEqualTo: caseId)
         .orderBy('requestedAt', descending: true)
         .snapshots()
@@ -422,7 +453,11 @@ class LabTestService {
 
   /// Stream all laboratory requests for Central Lab Queue
   static Stream<List<LabTestModel>> streamAllLabRequests() {
-    return _labRef
+    final ref = _labRef;
+    if (ref == null) {
+      return Stream.value(_getSampleTests('hc_demo_128'));
+    }
+    return ref
         .orderBy('requestedAt', descending: true)
         .snapshots()
         .map((snapshot) {

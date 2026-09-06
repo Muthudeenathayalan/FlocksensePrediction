@@ -6,17 +6,25 @@ import 'package:flock_sense/features/health/domain/biosecurity_assessment_model.
 class BiosecurityService {
   BiosecurityService._();
 
-  static final _firestore = FirebaseFirestore.instance;
+  static FirebaseFirestore? get _firestoreOrNull {
+    try {
+      return FirebaseFirestore.instance;
+    } catch (_) {
+      return null;
+    }
+  }
 
-  static CollectionReference<Map<String, dynamic>> get _bioRef =>
-      _firestore.collection('biosecurity_assessments');
+  static CollectionReference<Map<String, dynamic>>? get _bioRef =>
+      _firestoreOrNull?.collection('biosecurity_assessments');
 
   /// Save or update a biosecurity audit
   static Future<void> saveAssessment(BiosecurityAssessmentModel assessment) async {
+    final ref = _bioRef;
+    if (ref == null) return;
     try {
       final docRef = assessment.id.isNotEmpty
-          ? _bioRef.doc(assessment.id)
-          : _bioRef.doc();
+          ? ref.doc(assessment.id)
+          : ref.doc();
       await docRef.set(assessment.toJson(), SetOptions(merge: true));
     } catch (e) {
       debugPrint('[BiosecurityService.saveAssessment] Error: $e');
@@ -25,8 +33,10 @@ class BiosecurityService {
 
   /// Get assessment for a farm
   static Future<BiosecurityAssessmentModel?> getAssessmentForFarm(String farmId) async {
+    final ref = _bioRef;
+    if (ref == null) return _getDefaultAssessment(farmId);
     try {
-      final snap = await _bioRef.where('farmId', isEqualTo: farmId).limit(1).get();
+      final snap = await ref.where('farmId', isEqualTo: farmId).limit(1).get();
       if (snap.docs.isNotEmpty) {
         return BiosecurityAssessmentModel.fromJson({
           ...snap.docs.first.data(),
@@ -39,14 +49,20 @@ class BiosecurityService {
     return _getDefaultAssessment(farmId);
   }
 
-  /// Stream biosecurity assessment for a farm
+  /// Stream assessment for a specific farm
   static Stream<BiosecurityAssessmentModel?> streamAssessmentForFarm(String farmId) {
-    return _bioRef
+    final ref = _bioRef;
+    if (ref == null) {
+      return Stream.value(_getDefaultAssessment(farmId));
+    }
+    return ref
         .where('farmId', isEqualTo: farmId)
         .limit(1)
         .snapshots()
         .map((snap) {
-      if (snap.docs.isEmpty) return _getDefaultAssessment(farmId);
+      if (snap.docs.isEmpty) {
+        return _getDefaultAssessment(farmId);
+      }
       return BiosecurityAssessmentModel.fromJson({
         ...snap.docs.first.data(),
         'id': snap.docs.first.id,
@@ -59,7 +75,42 @@ class BiosecurityService {
 
   /// Stream all biosecurity assessments for state-wide surveillance
   static Stream<List<BiosecurityAssessmentModel>> streamAllAssessments() {
-    return _bioRef.snapshots().map((snap) {
+    final ref = _bioRef;
+    if (ref == null) {
+      return Stream.value([
+        _getDefaultAssessment('farm_01'),
+        BiosecurityAssessmentModel(
+          id: 'bio_farm_02',
+          farmId: 'farm_02',
+          farmName: 'Sahyadri Broiler Complex',
+          score: 54,
+          strength: BiosecurityStrength.fromScore(54),
+          visitorLogMaintained: BiosecurityAnswer.no,
+          restrictedEntry: BiosecurityAnswer.no,
+          footwearDisinfection: BiosecurityAnswer.yes,
+          vehicleDisinfection: BiosecurityAnswer.no,
+          protectiveClothing: BiosecurityAnswer.partial,
+          isolationAreaAvailable: BiosecurityAnswer.no,
+          cleanWaterSource: BiosecurityAnswer.yes,
+          waterSanitation: BiosecurityAnswer.yes,
+          safeCarcassDisposal: BiosecurityAnswer.no,
+          wasteDisposal: BiosecurityAnswer.partial,
+          vaccinationRecordsMaintained: BiosecurityAnswer.partial,
+          vaccinationUpToDate: BiosecurityAnswer.no,
+          riskFactors: const [
+            BiosecurityRiskFactor(code: 'BIO-01', category: 'Perimeter', severity: 'high', title: 'No southern perimeter fence', pointsLost: 15),
+            BiosecurityRiskFactor(code: 'BIO-02', category: 'Sanitation', severity: 'critical', title: 'Open carcass pit without lime coverage', pointsLost: 20),
+          ],
+          recommendations: const [
+            'Enforce strict vehicular wheel spray disinfection barrier',
+            'Immediately seal carcass disposal pit and switch to incineration',
+            'Complete mandatory IBD booster vaccination drive',
+          ],
+          assessedAt: DateTime.now().subtract(const Duration(days: 2)),
+        ),
+      ]);
+    }
+    return ref.snapshots().map((snap) {
       if (snap.docs.isEmpty) {
         return [
           _getDefaultAssessment('farm_01'),

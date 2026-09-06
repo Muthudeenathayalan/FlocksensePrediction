@@ -31,10 +31,6 @@ class _GovernmentVaccinationScreenState
         final records = snapshot.data ?? [];
         final isLoading = snapshot.connectionState == ConnectionState.waiting && records.isEmpty;
 
-        if (isLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
         // State-wide coverage KPIs
         final totalScheduled = records.length;
         final stateCoverage = 78.4;
@@ -68,17 +64,40 @@ class _GovernmentVaccinationScreenState
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: AppColors.primaryLight,
+                        color: const Color(0xFFDCFCE7),
                         borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFBBF7D0)),
                       ),
-                      child: const Icon(Icons.vaccines_outlined, color: AppColors.primary, size: 28),
+                      child: const Icon(Icons.vaccines_outlined, color: Color(0xFF15803D), size: 28),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('State Vaccination Surveillance & Immunity Gap Tracking', style: AppTypography.pageTitle),
+                          Row(
+                            children: [
+                              Text('State Vaccination Surveillance & Immunity Gap Tracking', style: AppTypography.pageTitle),
+                              const SizedBox(width: 10),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFDCFCE7),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: const Color(0xFF86EFAC)),
+                                ),
+                                child: const Text(
+                                  'DAHD • IMMUNIZATION SURVEILLANCE',
+                                  style: TextStyle(
+                                    color: Color(0xFF15803D),
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.3,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                           const SizedBox(height: 4),
                           Text(
                             'Monitor mandatory poultry immunization coverage, identify high-vulnerability vaccination gaps, and coordinate cold-chain vaccine drives.',
@@ -148,7 +167,18 @@ class _GovernmentVaccinationScreenState
                   children: [
                     Text('District Poultry Immunization Coverage & Gaps', style: AppTypography.cardTitle),
                     const SizedBox(height: 12),
-                    SingleChildScrollView(
+                    if (isLoading)
+                      const Padding(
+                        padding: EdgeInsets.all(32),
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    else if (filteredDistricts.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.all(32),
+                        child: Center(child: Text('No district immunization records found.')),
+                      )
+                    else
+                      SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: DataTable(
                         columnSpacing: 24,
@@ -203,7 +233,7 @@ class _GovernmentVaccinationScreenState
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text('State ring-vaccination drive notification dispatched to ${d.district} veterinary officers.'),
-                                        backgroundColor: AppColors.primary,
+                                        backgroundColor: const Color(0xFF15803D),
                                       ),
                                     );
                                   },

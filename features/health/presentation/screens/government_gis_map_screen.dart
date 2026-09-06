@@ -68,11 +68,35 @@ class _GovernmentGisMapScreenState extends State<GovernmentGisMapScreen> {
                     subtitle: 'Real-time spatial clustering, risk heatmaps, quarantine buffer zones, and geocoded poultry facilities.',
                     actions: [
                       Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFDCFCE7),
+                          borderRadius: BorderRadius.circular(AppDesign.radiusSm),
+                          border: Border.all(color: const Color(0xFFBBF7D0)),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.circle, color: Color(0xFF15803D), size: 6),
+                            SizedBox(width: 5),
+                            Text(
+                              'DAHD • LIVE EPIDEMIOLOGY',
+                              style: TextStyle(
+                                color: Color(0xFF15803D),
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                         decoration: BoxDecoration(
                           color: AppColors.surface,
                           borderRadius: BorderRadius.circular(AppDesign.radiusMd),
-                          border: Border.all(color: AppColors.border),
+                          border: Border.all(color: const Color(0xFFCBD5E1)),
                         ),
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
@@ -156,7 +180,7 @@ class _GovernmentGisMapScreenState extends State<GovernmentGisMapScreen> {
                   ),
                   const SizedBox(height: 20),
 
-                  // 3. Full Interactive Real-Time Tile GIS Map with Tactical Controls
+                  // 3. Full Interactive GIS Map Canvas with Tactical Controls
                   SurveillanceGisMap(
                     farmMarkers: farms,
                     activeClusters: clusters,
@@ -164,8 +188,12 @@ class _GovernmentGisMapScreenState extends State<GovernmentGisMapScreen> {
                     onDistrictChanged: (dist) => setState(() => _selectedDistrict = dist),
                     onClusterSelected: _showClusterDetailDialog,
                     onFarmSelected: _showFarmDetailDialog,
-                    height: 640,
+                    height: 560,
                   ),
+                  const SizedBox(height: 16),
+
+                  // 4. Map Layer Controls & GIS Legend Bar
+                  _buildGisControlAndLegendBar(),
                   const SizedBox(height: 20),
                 ],
               ),
@@ -173,6 +201,78 @@ class _GovernmentGisMapScreenState extends State<GovernmentGisMapScreen> {
           },
         );
       },
+    );
+  }
+
+  Widget _buildGisControlAndLegendBar() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppDesign.radiusLg),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: AppDesign.subtleShadow,
+      ),
+      child: Wrap(
+        alignment: WrapAlignment.spaceBetween,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 20,
+        runSpacing: 14,
+        children: [
+          // Left: Layer Toggles
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              const Text('Surveillance Layers:', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF0F172A))),
+              FilterChip(
+                label: const Text('10km Quarantine Cordon', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                selected: _showQuarantineRings,
+                selectedColor: const Color(0xFFFEE2E2),
+                checkmarkColor: const Color(0xFFDC2626),
+                side: BorderSide(color: _showQuarantineRings ? const Color(0xFFF87171) : const Color(0xFFCBD5E1)),
+                onSelected: (val) => setState(() => _showQuarantineRings = val),
+              ),
+              FilterChip(
+                label: const Text('High-Density Corridors', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                selected: _showHighDensityCorridors,
+                selectedColor: const Color(0xFFE0F2FE),
+                checkmarkColor: const Color(0xFF0284C7),
+                side: BorderSide(color: _showHighDensityCorridors ? const Color(0xFF38BDF8) : const Color(0xFFCBD5E1)),
+                onSelected: (val) => setState(() => _showHighDensityCorridors = val),
+              ),
+            ],
+          ),
+
+          // Right: Semantic Map Legend
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 16,
+            runSpacing: 8,
+            children: [
+              _buildLegendPin(const Color(0xFFDC2626), 'Active Outbreak (Score >= 76)'),
+              _buildLegendPin(const Color(0xFFF59E0B), 'Elevated Risk (Score 51-75)'),
+              _buildLegendPin(const Color(0xFF16A34A), 'Normal / Tier-1 Compliant'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLegendPin(Color color, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 6),
+        Text(label, style: const TextStyle(fontSize: 12, color: AppColors.slate600)),
+      ],
     );
   }
 }

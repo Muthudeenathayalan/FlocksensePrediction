@@ -6,6 +6,7 @@ import 'package:flock_sense/features/health/data/outbreak_cluster_service.dart';
 import 'package:flock_sense/features/health/domain/district_surveillance_model.dart';
 import 'package:flock_sense/features/health/domain/health_case_model.dart';
 import 'package:flock_sense/features/health/domain/outbreak_cluster_model.dart';
+import 'package:flock_sense/features/health/presentation/screens/government_farm_surveillance_detail_screen.dart';
 import 'package:flock_sense/features/health/presentation/widgets/outbreak_cluster_alert_card.dart';
 import 'package:flock_sense/features/health/presentation/widgets/surveillance_gis_map.dart';
 import 'package:flock_sense/shared/analytics/animated_bar_chart.dart';
@@ -164,12 +165,17 @@ class _GovernmentCommandCenterScreenState extends State<GovernmentCommandCenterS
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.12),
+              color: const Color(0xFFDCFCE7),
               borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFFBBF7D0)),
             ),
-            child: const Icon(Icons.admin_panel_settings_outlined, color: AppColors.primary, size: 24),
+            child: const Icon(
+              Icons.admin_panel_settings_rounded,
+              color: Color(0xFF15803D),
+              size: 26,
+            ),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -183,7 +189,7 @@ class _GovernmentCommandCenterScreenState extends State<GovernmentCommandCenterS
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
-                        color: AppColors.textPrimary,
+                        color: Color(0xFF0F172A),
                         letterSpacing: -0.2,
                       ),
                     ),
@@ -191,21 +197,22 @@ class _GovernmentCommandCenterScreenState extends State<GovernmentCommandCenterS
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: AppColors.success.withOpacity(0.12),
+                        color: const Color(0xFFDCFCE7),
                         borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: AppColors.success),
+                        border: Border.all(color: const Color(0xFF86EFAC)),
                       ),
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.circle, color: AppColors.success, size: 7),
+                          Icon(Icons.circle, color: Color(0xFF15803D), size: 7),
                           SizedBox(width: 5),
                           Text(
-                            'LIVE SURVEILLANCE • MAHARASHTRA',
+                            'DAHD • MAHARASHTRA STATE COMMAND',
                             style: TextStyle(
-                              color: AppColors.success,
+                              color: Color(0xFF15803D),
                               fontSize: 10,
                               fontWeight: FontWeight.w800,
+                              letterSpacing: 0.3,
                             ),
                           ),
                         ],
@@ -216,7 +223,7 @@ class _GovernmentCommandCenterScreenState extends State<GovernmentCommandCenterS
                 const SizedBox(height: 3),
                 const Text(
                   'State-wide GIS disease intelligence, multi-farm outbreak early warning, and district intervention triage',
-                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                 ),
               ],
             ),
@@ -227,11 +234,16 @@ class _GovernmentCommandCenterScreenState extends State<GovernmentCommandCenterS
                 const SnackBar(content: Text('Exporting State Surveillance Report (PDF)...')),
               );
             },
-            icon: const Icon(Icons.download_outlined, size: 16),
-            label: const Text('Export Report'),
+            icon: const Icon(Icons.download_outlined, size: 16, color: Color(0xFF0F172A)),
+            label: const Text(
+              'Export Report',
+              style: TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.w700),
+            ),
             style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.textPrimary,
-              side: const BorderSide(color: AppColors.border),
+              backgroundColor: const Color(0xFFF8FAFC),
+              side: const BorderSide(color: Color(0xFFCBD5E1)),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
           ),
         ],
@@ -702,17 +714,20 @@ class _GovernmentCommandCenterScreenState extends State<GovernmentCommandCenterS
           ),
           // Avg. Vet Response Time
           Expanded(flex: 2, child: Text('${d.averageVetResponseTimeMinutes} min')),
-          // Drill Down Action
           Expanded(
             flex: 2,
-            child: TextButton.icon(
+            child: OutlinedButton.icon(
               onPressed: () => _showDistrictDrillDown(d),
-              icon: const Icon(Icons.insights, size: 14),
+              icon: const Icon(Icons.insights, size: 14, color: Color(0xFF15803D)),
               label: const Text('Inspect'),
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.primary,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFF15803D),
+                side: const BorderSide(color: Color(0xFFBBF7D0)),
+                backgroundColor: const Color(0xFFF0FDF4),
                 visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
               ),
             ),
           ),
@@ -831,7 +846,7 @@ class _GovernmentCommandCenterScreenState extends State<GovernmentCommandCenterS
       builder: (ctx) => AlertDialog(
         title: Row(
           children: [
-            const Icon(Icons.location_city, color: AppColors.primary),
+            const Icon(Icons.location_city, color: Color(0xFF15803D)),
             const SizedBox(width: 8),
             Text('${d.district} District Epidemiological Dossier'),
           ],
@@ -880,7 +895,7 @@ class _GovernmentCommandCenterScreenState extends State<GovernmentCommandCenterS
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('• ', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w900)),
+                        const Text('• ', style: TextStyle(color: Color(0xFF15803D), fontWeight: FontWeight.w900)),
                         Expanded(child: Text(r, style: const TextStyle(fontSize: 12))),
                       ],
                     ),
@@ -977,6 +992,22 @@ class _GovernmentCommandCenterScreenState extends State<GovernmentCommandCenterS
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close')),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => GovernmentFarmSurveillanceDetailScreen(
+                    farmId: farm.farmId,
+                    farmName: farm.farmName,
+                    district: farm.district,
+                  ),
+                ),
+              );
+            },
+            child: const Text('Open Surveillance Dossier'),
+          ),
         ],
       ),
     );

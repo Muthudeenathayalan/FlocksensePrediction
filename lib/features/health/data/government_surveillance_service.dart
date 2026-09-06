@@ -30,22 +30,41 @@ class GovernmentKpiData {
 class GovernmentSurveillanceService {
   GovernmentSurveillanceService._();
 
-  static final _firestore = FirebaseFirestore.instance;
+  static FirebaseFirestore? get _firestoreOrNull {
+    try {
+      return FirebaseFirestore.instance;
+    } catch (_) {
+      return null;
+    }
+  }
+
   static final _auditService = AuditService();
 
-  static CollectionReference<Map<String, dynamic>> get _clustersRef =>
-      _firestore.collection('outbreak_clusters');
-  static CollectionReference<Map<String, dynamic>> get _casesRef =>
-      _firestore.collection('health_cases');
-  static CollectionReference<Map<String, dynamic>> get _farmsRef =>
-      _firestore.collection('farms');
+  static CollectionReference<Map<String, dynamic>>? get _clustersRef =>
+      _firestoreOrNull?.collection('outbreak_clusters');
+  static CollectionReference<Map<String, dynamic>>? get _casesRef =>
+      _firestoreOrNull?.collection('health_cases');
+  static CollectionReference<Map<String, dynamic>>? get _farmsRef =>
+      _firestoreOrNull?.collection('farms');
 
   // ─────────────────────────────────────────────────────────────────────────────
   // 1. STREAM COMMAND CENTER TOP KPIs
   // ─────────────────────────────────────────────────────────────────────────────
 
   static Stream<GovernmentKpiData> streamCommandCenterKPIs() {
-    return _clustersRef.snapshots().asyncMap((clusterSnap) async {
+    final ref = _clustersRef;
+    if (ref == null) {
+      return Stream.value(const GovernmentKpiData(
+        activeClustersCount: 1,
+        criticalCasesCount: 3,
+        farmsAtRiskCount: 3,
+        affectedDistrictsCount: 1,
+        reportedAffectedBirds: 101,
+        stateVaccinationCoverage: 78.4,
+        averageVetResponseMinutes: 18,
+      ));
+    }
+    return ref.snapshots().asyncMap((clusterSnap) async {
       try {
         final clusters = clusterSnap.docs
             .map((d) => OutbreakClusterModel.fromJson({...d.data(), 'id': d.id}))
@@ -56,10 +75,10 @@ class GovernmentSurveillanceService {
                 c.status == OutbreakClusterStatus.confirmed)
             .toList();
 
-        final casesSnap = await _casesRef.get();
-        final cases = casesSnap.docs
+        final casesSnap = await _casesRef?.get();
+        final cases = casesSnap?.docs
             .map((d) => HealthCaseModel.fromJson({...d.data(), 'id': d.id}))
-            .toList();
+            .toList() ?? [];
 
         final activeClustersCount = clusters.length;
         final affectedFarms = clusters.fold<Set<String>>({}, (set, c) => set..addAll(c.farmIds));
@@ -96,12 +115,16 @@ class GovernmentSurveillanceService {
   // ─────────────────────────────────────────────────────────────────────────────
 
   static Stream<List<DistrictSurveillanceSummary>> streamDistrictSummaries() {
-    return _casesRef.snapshots().asyncMap((casesSnap) async {
+    final ref = _casesRef;
+    if (ref == null) {
+      return Stream.value(_getSampleDistricts());
+    }
+    return ref.snapshots().asyncMap((casesSnap) async {
       try {
-        final clustersSnap = await _clustersRef.get();
-        final clusters = clustersSnap.docs
+        final clustersSnap = await _clustersRef?.get();
+        final clusters = clustersSnap?.docs
             .map((d) => OutbreakClusterModel.fromJson({...d.data(), 'id': d.id}))
-            .toList();
+            .toList() ?? [];
 
         final cases = casesSnap.docs
             .map((d) => HealthCaseModel.fromJson({...d.data(), 'id': d.id}))
@@ -216,12 +239,16 @@ class GovernmentSurveillanceService {
   // ─────────────────────────────────────────────────────────────────────────────
 
   static Stream<List<FarmGisMapMarker>> streamFarmGisMarkers() {
-    return _farmsRef.snapshots().asyncMap((farmSnap) async {
+    final ref = _farmsRef;
+    if (ref == null) {
+      return Stream.value(_getDefaultMarkers());
+    }
+    return ref.snapshots().asyncMap((farmSnap) async {
       try {
-        final casesSnap = await _casesRef.get();
-        final cases = casesSnap.docs
+        final casesSnap = await _casesRef?.get();
+        final cases = casesSnap?.docs
             .map((d) => HealthCaseModel.fromJson({...d.data(), 'id': d.id}))
-            .toList();
+            .toList() ?? [];
 
         final markers = <FarmGisMapMarker>[];
         final now = DateTime.now();
@@ -352,8 +379,10 @@ class GovernmentSurveillanceService {
     required String reason,
     required String officerId,
   }) async {
+    final ref = _clustersRef;
+    if (ref == null) return false;
     try {
-      await _clustersRef.doc(clusterId).update({
+      await ref.doc(clusterId).update({
         'status': status.name,
         'statusUpdatedBy': officerId,
         'statusUpdateReason': reason,

@@ -31,10 +31,6 @@ class _GovernmentLabSurveillanceScreenState
         final tests = snapshot.data ?? [];
         final isLoading = snapshot.connectionState == ConnectionState.waiting && tests.isEmpty;
 
-        if (isLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
         final totalTests = tests.length;
         final inTransit = tests.where((t) => t.status == LabTestStatus.dispatched).length;
         final inTesting = tests.where((t) => t.status == LabTestStatus.testing || t.status == LabTestStatus.received).length;
@@ -58,17 +54,40 @@ class _GovernmentLabSurveillanceScreenState
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: AppColors.indigo.withOpacity(0.12),
+                        color: const Color(0xFFEEF2FF),
                         borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFC7D2FE)),
                       ),
-                      child: const Icon(Icons.science_outlined, color: AppColors.indigo, size: 28),
+                      child: const Icon(Icons.science_outlined, color: Color(0xFF4F46E5), size: 28),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Laboratory Diagnostic Pipeline & Pathogen Surveillance', style: AppTypography.pageTitle),
+                          Row(
+                            children: [
+                              Text('Laboratory Diagnostic Pipeline & Pathogen Surveillance', style: AppTypography.pageTitle),
+                              const SizedBox(width: 10),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFDCFCE7),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: const Color(0xFF86EFAC)),
+                                ),
+                                child: const Text(
+                                  'DAHD • PATHOGEN DIAGNOSTICS & RT-PCR',
+                                  style: TextStyle(
+                                    color: Color(0xFF15803D),
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.3,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                           const SizedBox(height: 4),
                           Text(
                             'Centralized diagnostic sample tracking, cold-chain receipt verification, RT-PCR viral panel assays, and confirmed laboratory findings.',
@@ -91,9 +110,9 @@ class _GovernmentLabSurveillanceScreenState
                     spacing: 16,
                     runSpacing: 16,
                     children: [
-                      _buildKpiCard('Total Diagnostic Requests', '$totalTests Specimens', Icons.biotech_outlined, AppColors.primary, isNarrow ? constraints.maxWidth : cardWidth),
+                      _buildKpiCard('Total Diagnostic Requests', '$totalTests Specimens', Icons.biotech_outlined, const Color(0xFF15803D), isNarrow ? constraints.maxWidth : cardWidth),
                       _buildKpiCard('Samples In Transit (Cold-Chain)', '$inTransit Dispatched', Icons.local_shipping_outlined, AppColors.warning, isNarrow ? constraints.maxWidth : cardWidth),
-                      _buildKpiCard('Active Laboratory Assays', '$inTesting in Processing', Icons.hourglass_top_rounded, AppColors.indigo, isNarrow ? constraints.maxWidth : cardWidth),
+                      _buildKpiCard('Active Laboratory Assays', '$inTesting in Processing', Icons.hourglass_top_rounded, const Color(0xFF4F46E5), isNarrow ? constraints.maxWidth : cardWidth),
                       _buildKpiCard('Diagnostic Results Ready', '$completed Confirmed', Icons.fact_check_outlined, AppColors.healthy, isNarrow ? constraints.maxWidth : cardWidth),
                     ],
                   );
@@ -123,7 +142,13 @@ class _GovernmentLabSurveillanceScreenState
                   children: [
                     Text('Diagnostic Samples & Viral Identification Queue', style: AppTypography.cardTitle),
                     const SizedBox(height: 12),
-                    SingleChildScrollView(
+                    if (isLoading)
+                      const Padding(
+                        padding: EdgeInsets.all(32),
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    else
+                      SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: DataTable(
                         columnSpacing: 20,
